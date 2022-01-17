@@ -16,5 +16,4 @@ See the Python 3 GIS Server Setup Wiki for details on running the setup files: h
 This is documented in the Wiki but basically we need conda to be able to break through carbon black AND possibly the corporate firewall to run these
 
 Potential TO-DO items:
-Rename arcnng3 back to arcnng3
 Set up a config file to list all the packages we need, so we can easily update any changes across all environments

@@ -1,0 +1,59 @@
+Since BHE has disabled Universal Access Control in the group policy, elevating scripts is not as simple any more.
+
+For programs and executables, elevation can still be done in the context menu by selecting "Run as a different user...", but this option is not available for scripts.
+
+Note that the only way to run explorer.exe as another user (and manage folders with GUI) is to log out and back in as s_ account; there is no workaround to open explorer.exe as another user. (But you can still file manage via command line if pwsh or cmd is opened as the appropriate user, with the following steps).
+
+Adding "run as user" context menu item to more file types
+Download the ShellRunAs utility from https://docs.microsoft.com/en-us/sysinternals/downloads/shellrunas
+OR get it from here: \\nng\network\apps\ops\SysInternals
+In a cmd prompt run shellrunas.exe /reg 
+
+Running as user when not an available context menu option (i.e. .msi) - even after doing the above
+There is a chance that certain files still won't have run as user available, such as .msi files
+
+For MSI files, run the following where shellrunas is in the cwd:
+
+shellrunas msiexec /i <msi file path>
+
+Please note that this does not work when there are spaces in the file name
+
+Possible workaround for this is to create a new powershell drive from the path with the space https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/new-psdrive
+
+For administrative tools, run shellrunas <tool>.msc
+
+Some tools don't need the .msc file extension, however you need to type it in Win+R should work the same here.
+
+
+
+Alternately to all of the above, put the following in your Powershell profile, where sysInternalsDir is where the shellrunas exe is located. The you don't need to worry about file extensions at all. This function will also make more run commands available to call.
+
+shellrunas
+#sometimes must include file extension for .msc
+function shellrunas($file) {
+    pushd $sysInternalsDir
+    switch ($([System.IO.Path]::GetExtension($file))){
+        {$_ -in ".msi", ".msp"} {. ./shellrunas msiexec /i $file; Break;} #will not work with space in file name
+        Default {
+            $fn = $([System.IO.Path]::GetFileName($file))
+            $sysFolders = "$($Env:windir)", "$($Env:windir)\system32"
+            $inSysFolder = $false
+            foreach ($p in $sysFolders){
+                if (!$inSysFolder -and $(check-if-file-in-path $p $fn)) {
+                    . ./shellrunas $p\$fn
+                    $inSysFolder = $true
+                }
+            }
+            if(!$inSysFolder) {. ./shellrunas $file}
+        }
+    }
+    popd
+}
+ 
+function get-file-list($path) {
+    return $(ls -af -Path $path -Name | out-string).split()
+}
+ 
+function check-if-file-in-path($path, $filename) {
+    return $($(get-file-list $path | Select-String -SimpleMatch -Pattern "$filename." | Out-String).indexOf($filename) -gt -1)
+}
