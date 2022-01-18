@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RDCMan programVersion="2.7" schemaVersion="3">
+  <file>
+    <credentialsProfiles />
+    <properties>
+      <expanded>True</expanded>
+      <name>Dev Servers</name>
+    </properties>
+    <logonCredentials inherit="None">
+      <profileName scope="Global">gis admin (dev)</profileName>
+    </logonCredentials>
+    <server>
+      <properties>
+        <displayName>Dev Build Server</displayName>
+        <name>nndes-apbuild2d</name>
+      </properties>
+    </server>
+    <server>
+      <properties>
+        <displayName>Dev GIS Server</displayName>
+        <name>nndes-apgis6d</name>
+      </properties>
+      <logonCredentials inherit="None">
+        <profileName scope="Global">gis admin (dev)</profileName>
+      </logonCredentials>
+      <connectionSettings inherit="None">
+        <connectToConsole>False</connectToConsole>
+        <startProgram />
+        <workingDir />
+        <port>3389</port>
+        <loadBalanceInfo />
+      </connectionSettings>
+    </server>
+    <server>
+      <properties>
+        <name>nndes-apgis2d</name>
+      </properties>
+      <logonCredentials inherit="None">
+        <profileName scope="Global">gis admin (dev)</profileName>
+      </logonCredentials>
+    </server>
+  </file>
+  <connected />
+  <favorites>
+    <server>Dev Servers\Dev Build Server</server>
+    <server>Dev Servers\Dev GIS Server</server>
+  </favorites>
+  <recentlyUsed />
+</RDCMan>
