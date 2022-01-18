@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RDCMan programVersion="2.7" schemaVersion="3">
+  <file>
+    <credentialsProfiles />
+    <properties>
+      <expanded>True</expanded>
+      <name>Mo Servers</name>
+    </properties>
+    <logonCredentials inherit="None">
+      <profileName scope="Global">gis admin (mo)</profileName>
+    </logonCredentials>
+    <server>
+      <properties>
+        <displayName>Mo GIS Server</displayName>
+        <name>nndes-apgis6m</name>
+      </properties>
+      <logonCredentials inherit="None">
+        <profileName scope="Local">Custom</profileName>
+        <userName>t101270</userName>
+        <password />
+        <domain>NNG</domain>
+      </logonCredentials>
+      <connectionSettings inherit="None">
+        <connectToConsole>False</connectToConsole>
+        <startProgram />
+        <workingDir />
+        <port>3389</port>
+        <loadBalanceInfo />
+      </connectionSettings>
+    </server>
+  </file>
+  <connected />
+  <favorites />
+  <recentlyUsed />
+</RDCMan>
