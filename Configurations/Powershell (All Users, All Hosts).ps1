@@ -1,1 +1,12 @@
-//nng/network/OmaUsers1/t101270/My Documents/WindowsPowerShell/profile.ps1
+{
+	"dev out": {
+		"prefix": "dev",
+		"body": "${LINE_COMMENT}DEV",
+		"description": "Comment out for dev testing"
+	},
+	"debugger": {
+		"prefix": "dbg",
+		"body": "debugger;",
+		"description": "Add js debugger line"
+	}
+}
