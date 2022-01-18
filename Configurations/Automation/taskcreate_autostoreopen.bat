@@ -1,1 +1,0 @@
-SCHTASKS /Create /SC ONLOGON /TN "Auto store open weekly to check for updates" /TR "C:\Automation\autostoreopen.ps1" /DELAY 0005:00

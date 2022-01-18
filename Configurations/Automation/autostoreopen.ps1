@@ -1,1 +1,0 @@
-If ($(Get-Date -Format 'dddd') -eq 'Monday'){start ms-windows-store:}

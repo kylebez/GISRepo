@@ -1,5 +1,0 @@
-channels:
-  - esri
-  - defaults
-  - conda-forge
-ssl_verify: false
