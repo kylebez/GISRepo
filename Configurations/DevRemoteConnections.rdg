@@ -1,19 +1,29 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <RDCMan programVersion="2.7" schemaVersion="3">
   <file>
-    <credentialsProfiles />
+    <credentialsProfiles>
+      <credentialsProfile inherit="None">
+        <profileName scope="Local">gis admin (dev)</profileName>
+        <userName>gisadmindev</userName>
+        <password>AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAGidev2g500OwOzCXE2e5lQAAAAACAAAAAAADZgAAwAAAABAAAADh6awb2P9nIhyxRF06b+9OAAAAAASAAACgAAAAEAAAAPCWYRXrs0g4DbTKuxE0axAYAAAAhhFJX9Xm3/P1KMEA4Yfm7ZL9aek0wKBOFAAAAOBwvinHJBer4Lg1QNJqhoqJXN8g</password>
+        <domain>NNG</domain>
+      </credentialsProfile>
+    </credentialsProfiles>
     <properties>
       <expanded>True</expanded>
       <name>Dev Servers</name>
     </properties>
     <logonCredentials inherit="None">
-      <profileName scope="Global">gis admin (dev)</profileName>
+      <profileName scope="Global">Build Server</profileName>
     </logonCredentials>
     <server>
       <properties>
         <displayName>Dev Build Server</displayName>
         <name>nndes-apbuild2d</name>
       </properties>
+      <logonCredentials inherit="None">
+        <profileName scope="Global">Build Server</profileName>
+      </logonCredentials>
     </server>
     <server>
       <properties>
@@ -21,7 +31,10 @@
         <name>nndes-apgis6d</name>
       </properties>
       <logonCredentials inherit="None">
-        <profileName scope="Global">gis admin (dev)</profileName>
+        <profileName scope="Local">Custom</profileName>
+        <userName>svcNN_GIS_Dev</userName>
+        <password>AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAGidev2g500OwOzCXE2e5lQAAAAACAAAAAAADZgAAwAAAABAAAAB5+ristFANfYZfCgxch4qEAAAAAASAAACgAAAAEAAAANbMptXJa6XXCdapTETy2e0gAAAA8zwFaBEleiO79xRcqlPl58v4SDxK+zonn1VG5O/PEskUAAAAZhUewPkdApB0JN/fYJqClQMlFXM=</password>
+        <domain>NNG</domain>
       </logonCredentials>
       <connectionSettings inherit="None">
         <connectToConsole>False</connectToConsole>
@@ -41,9 +54,6 @@
     </server>
   </file>
   <connected />
-  <favorites>
-    <server>Dev Servers\Dev Build Server</server>
-    <server>Dev Servers\Dev GIS Server</server>
-  </favorites>
+  <favorites />
   <recentlyUsed />
 </RDCMan>
