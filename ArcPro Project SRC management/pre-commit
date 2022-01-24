@@ -13,7 +13,7 @@ done
 if [ ${#APRX_SERVICE_FILES[@]} -gt 0 ]; then
   for f in $APRX_SERVICE_FILES
   do
-    sh $(git rev-parse --git-dir)/export-map.sh $f
+    sh $(git rev-parse --show-toplevel)/.githooks/export-map.sh $f
 	if [ $? -eq 9 ]; then
 		echo "Removing from commit"
 		if ! [ ${#MAPX_SERVICE_FILES[@]} -gt 0 ]; then #only reset aprx if there is no exported file in the commit either

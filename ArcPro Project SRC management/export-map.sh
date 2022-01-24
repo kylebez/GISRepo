@@ -1,5 +1,4 @@
 #!/bin/sh
-
 # Export the aprx files to mapx
 if [ $# -eq 0 ] || [ "${1##*.}" ==  "arprx" ]; then
     echo "No aprx file provided"
