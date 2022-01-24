@@ -1,3 +1,3 @@
 #Add the following alias to gitconfig:
 
-aprx-diff = "!sh $(git rev-parse --git-dir)/export-map.sh \"${1//\\//}\" && git diff --cached ${1%.*}-export.mapx"
+aprx-diff = "!sh $(git rev-parse --show-toplevel)/.githooks/export-map.sh \"${1//\\//}\" && git diff --cached ${1%.*}-export.mapx"
