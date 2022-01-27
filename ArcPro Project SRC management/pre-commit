@@ -3,6 +3,7 @@
 STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
 
 declare -a APRX_SERVICE_FILES
+declare -a MAPX_FILES
 
 # Test if there are any .aprx files in the index
 for filepath in $(git diff --cached --name-only --diff-filter=M)
@@ -10,28 +11,30 @@ do
 	test -z $(echo $filepath | gawk '/aprx$/') || APRX_SERVICE_FILES+=($filepath);
 	test -z $(echo $filepath | gawk '/mapx$/') || MAPX_FILES+=($filepath);
 done
-if [ ${#APRX_SERVICE_FILES[@]} -gt 0 ]; then
-  for f in $APRX_SERVICE_FILES
+if [ ${#APRX_SERVICE_FILES[@]} -gt 0 ] && [ -e $(git rev-parse --show-toplevel)/.githooks/export-map.sh ]; then
+  for f in ${APRX_SERVICE_FILES[@]}
   do
+    echo "Working with file $f"
     sh $(git rev-parse --show-toplevel)/.githooks/export-map.sh $f
-	if [ $? -eq 9 ]; then
-		echo "Removing from commit"
-		if ! [ ${#MAPX_SERVICE_FILES[@]} -gt 0 ]; then #only reset aprx if there is no exported file in the commit either
-			git reset -q $f 
-		fi
-		STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM) #check if there is no more files to commit, if so quit
-		if [ -z "$STAGED_FILES" ]; then
-			exit 1
-		fi
-	fi
-    if [ $? -ne 0 ]; then
-		echo 'Error in export'
-		exit 1
-	fi
+    rc=$?
+    if [ $rc -eq 9 ]; then
+      echo "Removing from commit"
+      if ! [ ${#MAPX_FILES[@]} -gt 0 ]; then #only reset aprx if there is no exported file in the commit either
+        git reset $f 
+      fi
+    elif [ $rc -ne 0 ]; then
+		  echo 'Error in export'
+	  fi
+    continue
   done
 fi
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM) #check if there is no more files to commit, if so quit
+if [ ${#STAGED_FILES[@]} -eq 0 ]; then
+  echo "No files left to commit"
+  exit 1
+fi
 
-if [[ "$STAGED_FILES" = "" ]]; then
+if [ ${#STAGED_FILES[@]} -eq 0 ]; then
   exit 0
 fi
 
