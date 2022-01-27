@@ -105,22 +105,40 @@ function runas-other-user {
 
 #sometimes must include file extension for .msc
 function shellrunas{
-	param([string] $file,[switch] $Uninstall)
+	param([string] $fileOrName,[switch] $Uninstall)
 	pushd $sysInternalsDir
-	$file = $file -replace " ", '` '
-	switch ($([System.IO.Path]::GetExtension($file))){
-		".msi" {. $runmsiexec "/i" $file $Uninstall; Break;} 
-		".msp" {. $runmsiexec "/p" $file $Uninstall; Break;}
+	$fileOrName = $fileOrName -replace " ", '` '
+	switch ($([System.IO.Path]::GetExtension($fileOrName))){
+		#run the msiexec cmd when the file extension is msi or msp
+		".msi" {. $runmsiexec "/i" $fileOrName $Uninstall; Break;} 
+		".msp" {. $runmsiexec "/p" $fileOrName $Uninstall; Break;}
 		Default {
 			if ($Uninstall -eq $true){
-				. ./shellrunas powershell -Command "Invoke-Command -ArgumentList `"$file`" -ScriptBlock {$removeCim}"
+				#this uninstalls from the cim object server, pretty much the only way to uninstall standard apps from a terminal
+				#NOTE: will expect an application name, not a path
+				. ./shellrunas powershell -Command "Invoke-Command -ArgumentList `"$fileOrName`" -ScriptBlock {$removeCim}"
 			} else {
-				if (!(Test-Path -Path $file -IsValid)){
-					$fn = $([System.IO.Path]::GetFileName($file))
+				#checks if a path was given or a name - if a path just run the path
+				if (!(Test-Path -Path $fileOrName)){
+					$fn = $([System.IO.Path]::GetFileName($fileOrName))
+					#If a name is passed in, find the proper executable and full path - shellrunas needs the full path to work
+					
+					#Searches for a run command with the same name in the registry
+					$appaths = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths" -Name
+					foreach ($ap in $appaths){
+						if($ap.ToUpper() -like "*$($fileOrName.ToUpper())*"){
+							#gets and executes the run path of the found run command
+							$a = Get-ItemPropertyValue "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\$ap" -Name "(default)"
+							echo Running:` $a
+							. ./shellrunas $a
+							return
+						}
+					}
+					#Searches the PATH for an executable with the same name
 					foreach ($p in $Env:Path.Split(';')){
 						if(!(Test-Path -Path $p)){continue;}
 						if ($(check-if-file-in-path $p $fn)) {
-							echo $p\$fn
+							echo Running:` $p\$fn
 							. ./shellrunas $p\$fn
 							break;
 						}
@@ -133,23 +151,25 @@ function shellrunas{
 	popd
 }
 
+#MSI Runner
 $runmsiexec = {
 		param ([string]$handle,[string]$file,[bool]$uninstall)
 		if ($uninstall -eq $true){$handle = '/x'}
 		. ./shellrunas powershell -WindowStyle "Hidden" -Command "msiexec $handle $file"; Break;
 	}
 
+#Helper functions for traversing through path
 function get-file-list($path) {
 	return $(ls -af -Path $path -Name | out-string).split()
 }
-
 function check-if-file-in-path($path, $filename) {
 	return $($(get-file-list $path | Select-String -SimpleMatch -Pattern "$filename." | Out-String).indexOf($filename) -gt -1) 
 }
 
+#CIM Uninstaller
 $removeCim = {
 	param ([string]$name)
-	echo $('Searching for appliations with the name {0}' -f $name)
+	echo $('Searching for applications with the name {0}' -f $name)
 	$cims = Get-CimInstance -ClassName Win32_Product -Filter ('Name like ''%{0}%''' -f $name)
 	if ($cims.count -eq 0){echo $('No application found with name {0}' -f $name)}
 	foreach ($cim in $cims){
