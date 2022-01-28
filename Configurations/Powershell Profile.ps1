@@ -2,7 +2,7 @@ sal cadmin check-admin
 sal radmin runas-admin
 sal ruser runas-other-user
 sal suser shellrunas
-sal notepadp "C:\Program Files\Notepad++\notepad++.exe"
+$notepadp="$Env:ProgramFiles\Notepad++\notepad++.exe"
 
 $adminAccount = "NNG\s_101270"
 $sysInternalsDir = "C:\SysInternals"
@@ -107,7 +107,7 @@ function runas-other-user {
 function shellrunas{
 	param([string] $fileOrName,[switch] $Uninstall)
 	pushd $sysInternalsDir
-	$fileOrName = $fileOrName -replace " ", '` '
+	$fileOrNameModified = $fileOrName -replace " ", '` '
 	switch ($([System.IO.Path]::GetExtension($fileOrName))){
 		#run the msiexec cmd when the file extension is msi or msp
 		".msi" {. $runmsiexec "/i" $fileOrName $Uninstall; Break;} 
@@ -116,7 +116,7 @@ function shellrunas{
 			if ($Uninstall -eq $true){
 				#this uninstalls from the cim object server, pretty much the only way to uninstall standard apps from a terminal
 				#NOTE: will expect an application name, not a path
-				. ./shellrunas powershell -Command "Invoke-Command -ArgumentList `"$fileOrName`" -ScriptBlock {$removeCim}"
+				. ./shellrunas powershell -Command "Invoke-Command -ArgumentList `"$fileOrNameModified`" -ScriptBlock {$removeCim}"
 			} else {
 				#checks if a path was given or a name - if a path just run the path
 				if (!(Test-Path -Path $fileOrName)){
@@ -129,8 +129,9 @@ function shellrunas{
 						if($ap.ToUpper() -like "*$($fileOrName.ToUpper())*"){
 							#gets and executes the run path of the found run command
 							$a = Get-ItemPropertyValue "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\$ap" -Name "(default)"
+							$a = $a -replace " ", '` '
 							echo Running:` $a
-							. ./shellrunas $a
+							. ./shellrunas powershell -WindowStyle "Hidden" -Command "& `"$a `""
 							return
 						}
 					}
@@ -144,7 +145,7 @@ function shellrunas{
 						}
 					}
 				}
-				else{. ./shellrunas $file}
+				else{. ./shellrunas $fileOrName}
 			}
 		}
 	}
