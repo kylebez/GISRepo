@@ -41,6 +41,8 @@ fi
 PASS=true
 message="COMMIT FAILED: "
 
+#The following is optional stuff, just checking for dev comments
+
 for FILE in $STAGED_FILES
 do
   if (grep -F '#DEV' $FILE) || (grep -F '//DEV' $FILE); then
