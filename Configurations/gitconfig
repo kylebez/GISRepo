@@ -29,7 +29,7 @@
   branch = yellow black bold ul
 [alias]
   forgotten = branch --no-merged master
-  force-commit = "!f() { git commit --no-verify -m $1; }; f"
+  force-commit = "!f() { git commit --no-verify -m \"$1\"; }; f"
   sas = "!f() { git stash push -m \"working\" -u && git switch $1; }; f" 
   sap = "!f() { git switch $1 && git stash pop; }; f"
   update-master = "!f() { cb=$(git branch --show-current); git switch master && git pull && git switch $cb; }; f"
