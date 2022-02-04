@@ -45,18 +45,17 @@ message="COMMIT FAILED: "
 
 for FILE in $STAGED_FILES
 do
-  if (grep -F '#DEV' $FILE) || (grep -F '//DEV' $FILE); then
+  if (grep -FHn '#DEV' $FILE) || (grep -F '//DEV' $FILE); then
   PASS=false
-  message+=" Looks like there are some DEV comments to clear.\n"
+  printf "Looks like there are some DEV comments to clear.\n"
   fi
-  if (grep -F 'debugger;' $FILE) || (grep -F 'console.log(' $FILE) || (grep -F 'print(' $FILE); then
+  if (grep -FHn 'debugger;' $FILE); then
   PASS=false
-  message+=" Looks like there are some debugger statements to clear.\n"
+  printf " Looks like there are some debugger statements to clear.\n"
   fi
 done
 
 if ! $PASS; then
-  printf message
   exit 1
 fi
 
