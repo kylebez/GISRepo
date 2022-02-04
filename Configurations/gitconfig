@@ -30,3 +30,5 @@
 [alias]
   forgotten = branch --no-merged master
   force-commit = "!f() { git commit --no-verify -m $1; }; f"
+  sas = "!f() { git stash push -m \"working\" -u && git switch $1; }; f" 
+  sap = "!f() { git switch $1 && git stash pop; }; f"
