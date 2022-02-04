@@ -13,6 +13,7 @@
 	fscache = true
 	symlinks = true
 	editor = \"C:\\\\Program Files\\\\Notepad++\\\\notepad++.exe\" -multiInst -notabbar -nosession -noPlugin
+	useBuiltinFSMonitor = true
 [pull]
 	rebase = false
 [credential]
@@ -28,3 +29,4 @@
   branch = yellow black bold ul
 [alias]
   forgotten = branch --no-merged master
+  force-commit = "!f() { git commit --no-verify -m $1; }; f"
