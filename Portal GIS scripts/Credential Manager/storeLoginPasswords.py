@@ -3,7 +3,7 @@ import getpass
 import os
 from <config_lib> import config
 from configparser import ConfigParser
-from portal_scripts.gis import GIS
+from <portal_scripts>.gis import GIS
 
 # Moved all usernames to config.ini, this script takes that and asks for passwords and then puts them into OS cred store
 # Used to instantiate passwords on servers and the like

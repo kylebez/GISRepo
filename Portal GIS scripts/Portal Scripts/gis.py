@@ -1,5 +1,5 @@
 from urllib.parse import urlparse
-from arcgis import GIS as Portal
+import arcgis.gis as Portal
 from <config-lib> import config
 
 #NOTES:
@@ -59,14 +59,15 @@ class GIS(object):
 			if profileName is None:
 						profileName = username
 			if Portal.checkProfile(profileName):
-				self.portal = Portal(profile=profileName)
+				self.portal = Portal.GIS(profile=profileName)
 			else:
 				# If profile doesn't exist then make one
 				try:
-					self.portal = Portal(url, username, password, profile=profileName)
+					self.portal = Portal.GIS(url, username, password, profile=profileName)
 				except Exception:
 					raise Exception("Unable to connect to portal with username '{0}'".format(username))
 			self.connUser = username
+            self.url = self.portal.url
 
 	def sharePortalItems(self,name,share_group):
 		if isinstance(share_group, str):
