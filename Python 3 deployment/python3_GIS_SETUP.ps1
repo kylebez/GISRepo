@@ -11,7 +11,7 @@ param (
 	[Parameter(Mandatory = $true, ParameterSetName = 'UsingName', Position = 2)]
 	[Parameter(Mandatory = $true, ParameterSetName = 'UsingPath', Position = 1)]
 	[ValidateScript({ Test-Path -IsValid $_ })]
-	[string]$arcnngPath,
+	[string]$cusLibPath,
 	[string]$logFile = $null
 )
 class AbortException: System.Exception {
@@ -68,7 +68,6 @@ $thisScript = { try {
 		$GISNewEnv = "`"$GISEnvPath$newCondaEnvName`""
 		$GISDefEnv = "`"$GISEnvPath$GISDefEnvName`""
 		IF ($Name) { $newCondaEnvPath = $GISNewEnv }
-		$arcnngLnkPath = $newCondaEnvPath + $sitePackages
 
 		#function to check admin
 		function Check-Admin{
@@ -156,21 +155,19 @@ $thisScript = { try {
 		Invoke-And-Set-Checkpoint "deactivate $newCondaEnvName" -StatusMessage "Environment deactivating..." -NoCheck
 
 		Write-Host "Installing dependencies..."
-		Write-Host "Installing cairosvg"
-		Invoke-And-Set-Checkpoint "conda install -p `"$newCondaEnvPath`" cairosvg --no-update-deps --yes --quiet"
-		Write-Host "Installing reportlab"
-		Invoke-And-Set-Checkpoint "conda install -p `"$newCondaEnvPath`" reportlab --no-update-deps --yes --quiet"
+		# TODO: Write dependency install code from config file
 
-		# Creating script to link to arcnng folder in new environment and to new environment in ArcGIS Pro env folder
-		$newArcnngPath = $arcnngLnkPath + "\arcnng3"
-		$mkLinks = "If (!(Test-Path $newArcnngPath)){New-Item -Path $newArcnngPath -ItemType Junction -Value $arcnngPath};If (!(Test-Path $GISNewEnv)) {New-Item -Path $GISNewEnv -ItemType Junction -Value $newCondaEnvPath}"
+		# TODO: Revise below
+		# Creating script to link to custom library folder in new environment and to new environment in ArcGIS Pro env folder
+		$newCusLibPath = $cusLibPath
+		$mkLinks = "If (!(Test-Path $newCusLibPath)){New-Item -Path $newCusLibPath -ItemType Junction -Value $cusLibPath};If (!(Test-Path $GISNewEnv)) {New-Item -Path $GISNewEnv -ItemType Junction -Value $newCondaEnvPath}"
 
-		# Creating script to write arcnng to default python environment lookup
+		# Creating script to write custom library to default python environment lookup
 		$arcGISProPthFile = "$($GISDefEnv.Trim('"')+$sitePackages)\ArcGISPro.pth"
-		$appendToPthStmt = 'import sys; sys.path.append(r`"""' + $(Split-Path $newArcnngPath) + '`""")'
+		$appendToPthStmt = 'import sys; sys.path.append(r`"""' + $(Split-Path $newCusLibPath) + '`""")'
 		$appendToPth = "If (!`$(Select-String -Quiet -Path $arcGISProPthFile -SimpleMatch '" + $($appendToPthStmt.Replace('`"', '"')) + "')){Out-File $arcGISProPthFile -InputObject `"""""``n$appendToPthStmt"""""" -Append -NoNewLine -Encoding ASCII}"
-		$mkLinksDesc = "linking to arcnng folder in new environment and to new environment in ArcGIS Pro env folder"
-		$appendPthsDesc = "writing arcnng to default python environment lookup"
+		$mkLinksDesc = "linking to custom library folder in new environment and to new environment in ArcGIS Pro env folder"
+		$appendPthsDesc = "writing custom library to default python environment lookup"
 
 		#Handle passing in a path with Program Files (containing a space) into the seperate powershell functions
 		$mkLinks = Handle-Program-Files-Space $mkLinks
@@ -191,7 +188,7 @@ $thisScript = { try {
 		}
 		#Test that the previous job was successful
 		#REFACTOR
-		If (!(Test-Path $newArcnngPath)){Write-Error "Error creating arcnng link, try it manually"}
+		If (!(Test-Path $cusLibPath)){Write-Error "Error creating custom library link, try it manually"}
 		If (!(Test-Path ($GISNewEnv.Trim('"')))) { Write-Error "Error creating new environment link, try it manually"}
 		If (!$(Select-String -Quiet -Path $arcGISProPthFile -SimpleMatch $($appendToPthStmt.Replace('`"""', '"')))) { Write-Error "Error writing to pth file, try it manually" }
 
