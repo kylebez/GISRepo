@@ -92,7 +92,7 @@ class GIS(object):
 	def getEnv(self):
 		try:
 			return (urlparse(self.url).netloc).split(".")[0].split('-')[1]
-		except KeyError:
+		except IndexError:
 			return "prod"
 	@classmethod
 	def checkProfile(cls,name):
