@@ -43,22 +43,21 @@ class GIS(object):
 		profileName: str
 			A way to pass in a profile name (to match the config file) - will default to username if nothing passed
 		"""
-		if nameOrConn == "":
+		if nameOrConn == "" and profileName is None:
 			raise Exception("Missing connection or username parameters")
-
-		try:
-			#automatically parse out username from a valid connection string or file path, path detected if it has the format server@database@user.sde
-			username = nameOrConn.split('@')[1].split('.')[0]
-		except IndexError:
-			#if not an connection string or file path, assume the parameter is passing in a username			
-			username = nameOrConn
-		finally:
-		#check if username exists as a profile, if password is not passed in, see if config can get it
-			if password == "":
+		if nameOrConn != "":
+			try:
+				#automatically parse out username from a valid connection string or file path, path detected if it has the format server@database@user.sde
+				username = nameOrConn.split('@')[1].split('.')[0]
+			except IndexError:
+				#if not an connection string or file path, assume the parameter is passing in a username			
+				username = nameOrConn
+			#check if username exists as a profile, if password is not passed in, see if config can get it
+			if password == "" and username != "":
 				password = config.getPassword(username)
 			if profileName is None:
-						profileName = username
-			if Portal.checkProfile(profileName):
+				profileName = username
+			if NNGIS.checkProfile(profileName):
 				self.portal = Portal.GIS(profile=profileName)
 			else:
 				# If profile doesn't exist then make one
@@ -67,7 +66,7 @@ class GIS(object):
 				except Exception:
 					raise Exception("Unable to connect to portal with username '{0}'".format(username))
 			self.connUser = username
-            self.url = self.portal.url
+			self.url = self.portal.url
 
 	def sharePortalItems(self,name,share_group):
 		if isinstance(share_group, str):
