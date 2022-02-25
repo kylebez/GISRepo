@@ -163,28 +163,23 @@ $thisScript = { try {
 		$mkLinks = "If (!(Test-Path $newCusLibPath)){New-Item -Path $newCusLibPath -ItemType Junction -Value $cusLibPath};If (!(Test-Path $GISNewEnv)) {New-Item -Path $GISNewEnv -ItemType Junction -Value $newCondaEnvPath}"
 
 		# Creating script to write custom library to default python environment lookup
-		$arcGISProPthFile = "$($GISDefEnv.Trim('"')+$sitePackages)\ArcGISPro.pth"
-		$appendToPthStmt = 'import sys; sys.path.append(r`"""' + $(Split-Path $newCusLibPath) + '`""")'
-		$appendToPth = "If (!`$(Select-String -Quiet -Path $arcGISProPthFile -SimpleMatch '" + $($appendToPthStmt.Replace('`"', '"')) + "')){Out-File $arcGISProPthFile -InputObject `"""""``n$appendToPthStmt"""""" -Append -NoNewLine -Encoding ASCII}"
 		$mkLinksDesc = "linking to custom library folder in new environment and to new environment in ArcGIS Pro env folder"
-		$appendPthsDesc = "writing custom library to default python environment lookup"
 
 		#Handle passing in a path with Program Files (containing a space) into the seperate powershell functions
 		$mkLinks = Handle-Program-Files-Space $mkLinks
 		$appendToPth = Handle-Program-Files-Space $appendToPth
 
-		# run in a seperate elevated process (will always need to reenter password since they turned off UAC)
+		# run in a seperate elevated process
 		# Write informational explanation and then run the created commands
-		$process = "Write-Output ``n'$mkLinksDesc'; $mkLinks; Write-Output ``n'$appendPthsDesc'; $appendToPth;"
+		$process = "Write-Output ``n'$mkLinksDesc'; $mkLinks;"
 		$process = $process.replace('"""', '"')
 		If (Check-Admin -eq $true){
 			Invoke-Expression $process
 		}
 		#Handle elevation if needed
 		Else{
-			Start-Job -Name runadmin -InitializationScript {cd $HOME} -Credential (get-credential) -ScriptBlock {
-				Invoke-Expression $input } -InputObject $process >$null
-			Receive-Job runadmin -AutoRemoveJob -Wait
+			$sb = {Param($command); cd $HOME; Invoke-Expression $command}
+			Start-Process powershell -Verb runas -ArgumentList "-NoExit","-Command &{$sb} $process" >$null
 		}
 		#Test that the previous job was successful
 		#REFACTOR
