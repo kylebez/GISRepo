@@ -183,8 +183,8 @@ $thisScript = { try {
 		}
 		#Test that the previous job was successful
 		#REFACTOR
-		If (!(Test-Path $cusLibPath)){Write-Error "Error creating custom library link, try it manually"}
-		If (!(Test-Path ($GISNewEnv.Trim('"')))) { Write-Error "Error creating new environment link, try it manually"}
+		If (!(Test-Path $cusLibPath)){Write-Warning "Error creating custom library link, please try it manually. Custom libraries will not work without it."}
+		If (!(Test-Path ($GISNewEnv.Trim('"')))) { Write-Warning "Error creating new environment link, please try it manually. Cannot reference this new environment by name without it."}
 		If (!$(Select-String -Quiet -Path $arcGISProPthFile -SimpleMatch $($appendToPthStmt.Replace('`"""', '"')))) { Write-Error "Error writing to pth file, try it manually" }
 
 		Write-Host "setting new environment as default `n"
