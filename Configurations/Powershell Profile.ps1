@@ -105,7 +105,8 @@ function runas-other-user {
 
 #sometimes must include file extension for .msc
 function shellrunas{
-	param([string] $fileOrName,[switch] $Uninstall)
+	param([string] $fileOrName, [switch] $Uninstall, [string][Parameter(ValueFromRemainingArguments)] $args)
+	echo $args
 	pushd $sysInternalsDir
 	$fileOrNameModified = $fileOrName -replace " ", '` '
 	switch ($([System.IO.Path]::GetExtension($fileOrName))){
@@ -126,12 +127,13 @@ function shellrunas{
 					#Searches for a run command with the same name in the registry
 					$appaths = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths" -Name
 					foreach ($ap in $appaths){
-						if($ap.ToUpper() -like "*$($fileOrName.ToUpper())*"){
+						if($ap.ToUpper() -like "$($fileOrName.ToUpper())*"){
 							#gets and executes the run path of the found run command
+							echo $ap
 							$a = Get-ItemPropertyValue "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\$ap" -Name "(default)"
 							$a = $a -replace " ", '` '
 							echo Running:` $a
-							. ./shellrunas powershell -WindowStyle "Hidden" -Command "& `"$a `""
+							. ./shellrunas powershell -Command "& `"$a $args`""
 							return
 						}
 					}
@@ -140,12 +142,12 @@ function shellrunas{
 						if(!(Test-Path -Path $p)){continue;}
 						if ($(check-if-file-in-path $p $fn)) {
 							echo Running:` $p\$fn
-							. ./shellrunas $p\$fn
+							. ./shellrunas $p\$fn $args
 							break;
 						}
 					}
 				}
-				else{. ./shellrunas $fileOrName}
+				else{echo Running:` $fileOrName;. ./shellrunas $fileOrName $args}
 			}
 		}
 	}
