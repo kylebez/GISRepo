@@ -20,6 +20,14 @@ def doAllServices():
 
 def setPasswordForService(s):
 	n = config.getUsername(s)
+    kr = type(keyring.get_keyring()).__name__
+	if kr == 'Keyring':
+		import platform
+		system = platform.system()
+		#from https://github.com/jaraco/keyring/issues/324
+		if  system == 'Darwin':
+			from keyring.backends import OS_X
+			keyring.set_keyring(OS_X.Keyring())
 	try:
 		if keyring.get_password(s,n) is None:
 			if "gis_portal" in s: #If it has gis_portal in the name, it should be a portal
@@ -43,7 +51,7 @@ def setPasswordForService(s):
 		else:
 			managePassword(s,n)
 	except keyring.errors.PasswordSetError:
-		print("Unable to set password")
+		raise Exception("Unable to set password")
 	return
 
 def managePassword(service, name, isPortal = False):
