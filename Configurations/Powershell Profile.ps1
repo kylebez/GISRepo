@@ -89,7 +89,7 @@ function check-admin {
 
 function Elevate-Task($command, $message){
 			#check if elevated, if so, run the string command
-			Write-Out $message
+			Write-Output $message
 			If (Check-Admin -eq $true){
 				Invoke-Expression $command
 			}
