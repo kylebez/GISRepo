@@ -126,7 +126,15 @@ $thisScript = { try {
 						 Invoke-And-Set-Checkpoint "conda remove -p $newCondaEnvPath --all --yes"
 					}
 					#Force delete any remaining environment folder
-					If ((Test-Path $newCondaEnvPath)){Remove-Item $newCondaEnvPath -Recurse -Force}
+					If ((Test-Path $newCondaEnvPath)){
+						$r = "Remove-Item $newCondaEnvPath -Recurse -Force"
+						If (Check-Admin -eq $true){
+							Invoke-Expression $r
+						}
+						Else{
+							Start-Process powershell -Verb runas -ArgumentList "-Command `"$r`""
+						}
+					}
 					Write-Host "Deletion complete"
 				}
 		}
