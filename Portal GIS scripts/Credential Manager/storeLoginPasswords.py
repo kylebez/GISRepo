@@ -20,14 +20,6 @@ def doAllServices():
 
 def setPasswordForService(s):
 	n = config.getUsername(s)
-    kr = type(keyring.get_keyring()).__name__
-	if kr == 'Keyring':
-		import platform
-		system = platform.system()
-		#from https://github.com/jaraco/keyring/issues/324
-		if  system == 'Darwin':
-			from keyring.backends import OS_X
-			keyring.set_keyring(OS_X.Keyring())
 	try:
 		if keyring.get_password(s,n) is None:
 			if "gis_portal" in s: #If it has gis_portal in the name, it should be a portal
@@ -79,6 +71,23 @@ def managePassword(service, name, isPortal = False):
 def passwordPrompt(service,name):
 	return getpass.getpass("\nSet the password for ({0})/{1}: ".format(service,name))
 
+kr = type(keyring.get_keyring()).__name__
+	if kr == 'Keyring':
+		import platform
+		system = platform.system()
+		#from https://github.com/jaraco/keyring/issues/324
+		if  system == 'Darwin':
+			from keyring.backends import OS_X
+			keyring.set_keyring(OS_X.Keyring())
+		elif system == 'Windows':
+			from keyring.backends import Windows
+			keyring.set_keyring(Windows.WinVaultKeyring())
+		else:
+            import sys,time
+			sys.stderr.write("Failed to initialize keyring. Enter creds manually.")
+            time.sleep(5.5)
+            sys.exit()
+            
 parser = ConfigParser()
 parser.read(os.path.join(os.path.dirname(config.__file__),"config.ini"))
 services = sorted(dict(parser.items("logins")).keys())
