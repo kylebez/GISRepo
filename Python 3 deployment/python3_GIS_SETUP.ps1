@@ -163,7 +163,6 @@ $thisScript = { try {
 		Write-Host "Setting conda configurations..."
 		#REFACTOR conda config getter and setter
 		#without this, there may be HTTP 000 errors on the network
-		. ./conda config --set ssl_verify no #NOTE: turning off ssl, not sure the TRC is 100% onboard with this
 		$condaChannels = $(. ./conda config --get channels).Split("`n").ForEach({ $_.Split("'")[1] })
 		#make sure esri is the top priority channel
 		If($condaChannels -notcontains "esri"){
