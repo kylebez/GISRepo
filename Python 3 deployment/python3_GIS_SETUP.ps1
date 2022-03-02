@@ -162,8 +162,11 @@ $thisScript = { try {
 
 		Write-Host "Setting conda configurations..."
 		#REFACTOR conda config getter and setter
-		#without this, there may be HTTP 000 errors on the network
-		$condaChannels = $(. ./conda config --get channels).Split("`n").ForEach({ $_.Split("'")[1] })
+		$condaChannels = $(. ./conda config --get channels)
+		If($condaChannels -eq $null){
+			. ./conda config --prepend channels defaults
+		}
+		$condaChannels = $condaChannels.Split("`n").ForEach({ $_.Split("'")[1] })
 		#make sure esri is the top priority channel
 		If($condaChannels -notcontains "esri"){
 			. ./conda config --prepend channels esri
