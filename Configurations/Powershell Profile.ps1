@@ -103,7 +103,7 @@ function Elevate-Task($command, $message){
 				}
 				Else {
 					Write-Output "Running the task in a seperate process...`n"
-					Start-Process -FilePath $p -ArgumentList "powershell ", " -NoExit -Command `"$command Start-Sleep -s 1.5; Exit;`""
+					Start-Process -FilePath $p -ArgumentList "powershell ", " -NoExit -Command `"$command; Start-Sleep -s 3; Exit;`""
 					Pause
 				}
 			}
