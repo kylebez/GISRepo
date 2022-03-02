@@ -60,6 +60,20 @@ $thisScript = { try {
 			$pythonExecDir = "$programFilesPath\ArcGIS\Server\framework\runtime\ArcGIS\bin\Python\"
 		}
 		
+		function Elevate-Task($command, $message){
+			#check if elevated, if so, run the string command
+			Write-Output `n$message
+			If (Check-Admin -eq $true){
+				Invoke-Expression $command
+			}
+			Else{
+				#Handle elevation if needed - NOTE NEED SHELLRUNAS from https://docs.microsoft.com/en-us/sysinternals/downloads/shellrunas
+				Write-Output "Running the task in a seperate process...`n"
+				Start-Process powershell -Verb runas -ArgumentList "-NoExit","-Command `"$command; Start-Sleep -s 3; Exit`"" >$null
+				Pause
+			}
+		}
+		
 		# Variable declarations once the python exec path is established
 		$sitePackages = "\Lib\site-packages"
 		$condaDir = $pythonExecDir + "Scripts"
@@ -104,7 +118,8 @@ $thisScript = { try {
 		#set cd to the correct location to call conda
 		Set-Location $condaDir
 		#Check if conda environment already exists, if it does, prompt to remove and reinstall
-		If (Test-Path ($GISNewEnv.Trim('"'))) {
+		$GISEnvPath = $GISNewEnv.Trim('"')
+		If (Test-Path ($GISEnvPath)) {
 			Write-Host "$newCondaEnvName already exists."
 			IF ($(Read-Host "Do you want to delete and reinstall? [y/n]").ToLower() -ne 'y') {
 				#Exit if no
@@ -118,7 +133,7 @@ $thisScript = { try {
 					$envs = (. ./conda info -e --json | ConvertFrom-Json).envs | where {$newCondaEnvName -eq $(Split-Path $_ -Leaf)}
 					Write-Host "Deleting environment, this can take a while"
 					#Sometimes a junction to the environment will mess up the removal, so remove it first - might need admin
-					$envs | where { $_ -eq $($GISNewEnv).Trim('"') } | % {$e = Get-Item $_; If ($e -ne $null -and $e.LinkType -eq 'Junction'){Remove-Item $e -Force}}
+					$envs | where { $_ -eq $($GISEnvPath) } | % {$e = Get-Item $_; If ($e -ne $null -and $e.LinkType -eq 'Junction'){Remove-Item $e -Force}}
 					$env = $envs|where{$_ -eq $newCondaEnvPath}
 					#If properly installed, try to remove the environment the proper way
 					If($env -ne $null){
@@ -127,14 +142,15 @@ $thisScript = { try {
 					}
 					#Force delete any remaining environment folder
 					If ((Test-Path $newCondaEnvPath)){
-						$r = "Remove-Item $newCondaEnvPath -Recurse -Force"
-						If (Check-Admin -eq $true){
-							Invoke-Expression $r
-						}
-						Else{
-							Start-Process powershell -Verb runas -ArgumentList "-Command `"$r`""
-						}
+						$remEnvCommand = "Remove-Item $newCondaEnvPath -Recurse -Force"
+						Elevate-Task $remEnvCommand "Attempting to delete environment folder"
 					}
+					#Delete the symlink to the enivronment
+					If ((Test-Path $GISEnvPath)){
+						$remSymLinkCommand = "cmd /c rmdir `"$($GISEnvPath.Replace(' ','` '))`""
+						Elevate-Task $remSymLinkCommand "Attempting to delete symlink"
+					}
+					Write-Host "Deletion complete"
 					Write-Host "Deletion complete"
 				}
 		}
@@ -180,15 +196,8 @@ $thisScript = { try {
 		# run in a seperate elevated process
 		# Write informational explanation and then run the created commands
 		$process = "Write-Output ``n'$mkLinksDesc'; $mkLinks;"
-		$process = $process.replace('"""', '"')
-		If (Check-Admin -eq $true){
-			Invoke-Expression $process
-		}
-		#Handle elevation if needed
-		Else{
-			$sb = {Param($command); cd $HOME; Invoke-Expression $command}
-			Start-Process powershell -Verb runas -ArgumentList "-NoExit","-Command &{$sb} $process" >$null
-		}
+		$process = "cd $HOME; $process"
+		Elevate-Task $process "Attempting to create symlinks"
 		#Test that the previous job was successful
 		#REFACTOR
 		If (!(Test-Path $cusLibPath)){Write-Warning "Error creating custom library link, please try it manually. Custom libraries will not work without it."}
