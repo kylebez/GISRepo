@@ -88,26 +88,32 @@ function check-admin {
 }
 
 function Elevate-Task($command, $message){
-			#check if elevated, if so, run the string command
-			Write-Output $message
-			If (Check-Admin -eq $true){
-				Invoke-Expression $command
-			}
-			Else{
-				#Handle elevation if needed - NOTE NEED SHELLRUNAS from https://docs.microsoft.com/en-us/sysinternals/downloads/shellrunas
-				$p = Read-Host -Prompt "Need elevation - what is the path to shellrunas (or 'N' if not installed)"
-				If ($p.ToUpper() -eq 'N' -or !(Test-Path $p.Trim('"'))) {
-					Write-Warning "Can't do this task automatically without the shellrunas utility`n
-					You can download it from https://docs.microsoft.com/en-us/sysinternals/downloads/shellrunas`n`n
-					Skipping... you have to do it manually `n"
-				}
-				Else {
-					Write-Output "Running the task in a seperate process...`n"
-					Start-Process -FilePath $p -ArgumentList "powershell ", " -NoExit -Command `"$command; Start-Sleep -s 3; Exit;`""
-					Pause
-				}
+	#check if elevated, if so, run the string command
+	Write-Output $message
+	If (Check-Admin -eq $true){
+		Invoke-Expression $command
+	}
+	Else{
+		#Handle elevation if needed - NOTE NEED SHELLRUNAS from https://docs.microsoft.com/en-us/sysinternals/downloads/shellrunas
+		$p = $sysInternalsDir+"/ShellRunas.exe"
+		If(!(Test-Path $p)){
+			$p = Read-Host -Prompt "Need elevation - what is the path to shellrunas (or 'N' if not installed)"
+			If ($p.ToUpper() -eq 'N' -or !(Test-Path $p.Trim('"'))) {
+				Write-Warning "Can't do this task automatically without the shellrunas utility`n
+				You can download it from https://docs.microsoft.com/en-us/sysinternals/downloads/shellrunas`n`n
+				Skipping... you have to do it manually `n"
+				return
 			}
 		}
+		Write-Output "Running the task in a seperate process...`n"
+		Start-Process -FilePath $p -ArgumentList "powershell ", " -NoExit -Command `"$command; Start-Sleep -s 3; Exit;`""
+		Pause
+	}
+}
+
+function enable-debugger-mode(){
+	Elevate-Task "reg add `"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock`" /t REG_DWORD /f /v `"AllowDevelopmentWithoutDevLicense`" /d `"1`"" "Turning on dev mode"
+}
 
 function runas-admin {
 	$a = check-admin
