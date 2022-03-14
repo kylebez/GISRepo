@@ -21,3 +21,5 @@
    If there is no export existing for this file, one will be exported regardless of the hash.
 
    To clear the hash and force a fresh export, delete the hash files or run `git clear-aprx-diff`.
+   
+   **Please note:** There is odd behavior when commiting through VSCode GUI. this works best through command line commits.
