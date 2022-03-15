@@ -134,7 +134,6 @@ function runas-other-user {
 #sometimes must include file extension for .msc
 function shellrunas{
 	param([string] $fileOrName, [switch] $Uninstall, [string][Parameter(ValueFromRemainingArguments)] $args)
-	echo $args
 	pushd $sysInternalsDir
 	$fileOrNameModified = $fileOrName -replace " ", '` '
 	switch ($([System.IO.Path]::GetExtension($fileOrName))){
@@ -157,7 +156,6 @@ function shellrunas{
 					foreach ($ap in $appaths){
 						if($ap.ToUpper() -like "$($fileOrName.ToUpper())*"){
 							#gets and executes the run path of the found run command
-							echo $ap
 							$a = Get-ItemPropertyValue "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\$ap" -Name "(default)"
 							$a = $a -replace " ", '` '
 							echo Running:` $a
@@ -194,7 +192,7 @@ function get-file-list($path) {
 	return $(ls -af -Path $path -Name | out-string).split()
 }
 function check-if-file-in-path($path, $filename) {
-	return $($(get-file-list $path | Select-String -SimpleMatch -Pattern "$filename." | Out-String).indexOf($filename) -gt -1) 
+	return $($(get-file-list $path | Select-String -Pattern "^$filename\." | Out-String).indexOf($filename) -gt -1) 
 }
 
 #CIM Uninstaller
