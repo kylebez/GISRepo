@@ -20,7 +20,7 @@ check_and_update_hashfile () {
 		return 1
 	fi
 }
-if [ -z "$1" ] || [ "${1##*.}" ==  "arprx" ]; then
+if [ $# -eq 0 ] || [ "${1##*.}" ==  "arprx" ]; then
     echo "No aprx file provided"
     exit 1
 fi
