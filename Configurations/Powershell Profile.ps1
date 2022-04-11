@@ -37,6 +37,8 @@ function reload-profile {
 	.$profile.AllUsersAllHosts
 }
 
+sal relp reload-profile
+
 function find-file($name) {
 	ls -recurse -filter "*${name}*" -ErrorAction SilentlyContinue | foreach {
 			$place_path = $_.directory
@@ -237,6 +239,35 @@ function restore-all-built-ins {
 }
 
 sal mklink make-link
+
+function manage-files-admin {
+	[CmdletBinding()]
+	param(
+	[Parameter(Mandatory)][ValidateSet("Rename","Remove","Move","Copy")] $operation,
+	[Parameter(Mandatory)][string[]]$InputPaths,
+	[string[]] $outputPathsOrNames
+	)
+	$i = @($InputPaths)
+	if ($operation -ne 'Remove'){
+		$mappedOp = $true
+		if($outputPathsOrNames -eq ''){throw "$operation operation requires addtional parameter"}
+		$o = @($outputPathsOrNames)
+		if($i.length -ne $o.length){throw "Parameter arrays don't match each others length"}
+	}
+	else{$mappedOp = $false}
+	
+	for($c=0;$c -le ($i.length-1);$c++){
+		$a=$i[$c]
+		$b=""
+		if($mappedOp){
+			$b = " "+$o[$c]
+		}
+		$commandString = '"'+"Write-Host 'Performing $operation on $a...';"+$operation+"-Item $a"+$b+" -Recursive;Read-Host -Prompt 'Press enter key to exit';Exit"+'"'
+		. {shellrunas pwsh -Command $commandString}
+	}	
+}
+
+sal mf manage-files-admin
 
 function make-link{
 	Param(
