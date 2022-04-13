@@ -33,4 +33,4 @@
   sas = "!f() { git stash push -m \"working\" -u && git switch $1; }; f" 
   sap = "!f() { git switch $1 && git stash pop; }; f"
   update-master = "!f() { cb=$(git branch --show-current); git sas master && git pull && git sap $cb; }; f"
-  oops-wrong-branch = "!f() { csha=$(git rev-parse HEAD);psha=$(git rev-parse HEAD~1);cb=$(git branch --show-current); git checkout $1 && git cherry-pick $csha && git checkout $cb && git reset --mixed $psha -q && git checkout $1; }; f"
+  oops-wrong-branch = "!f() { csha=$(git rev-parse HEAD);psha=$(git rev-parse HEAD~1);cb=$(git branch --show-current); git checkout $1 && git cherry-pick $csha && git checkout $cb && git reset --mixed $psha; }; f"
