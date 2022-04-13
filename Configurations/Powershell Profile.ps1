@@ -262,7 +262,11 @@ function manage-files-admin {
 		if($mappedOp){
 			$b = " "+$o[$c]
 		}
-		Elevate-Task '"'+"Write-Host 'Performing $operation on $a...';"+$operation+"-Item $a"+$b+" -Recursive"+'"' "Performing file operation"
+		if ($operation -eq 'Copy'){
+			$recurse = " -Recurse"
+		}
+		else{$recurse=""}
+		Elevate-Task "Write-Host 'Performing $operation on $a...';$operation-Item $a$b$recurse" "Performing file operation"
 	}	
 }
 
@@ -295,9 +299,9 @@ function change-permissions{
 	"Synchronize","TakeOwnership","Traverse","Write","WriteAttributes","WriteData","WriteExtendedAttributes")][string]$permission,
 	[Parameter(Mandatory)][ValidateSet("Allow","Deny")][string]$type
 	)
-	Elevate-Task "`$NewAcl = Get-Acl -Path $InputPath; `$newFilePermList = $id, $permission, $type; 
-	`$fileSystemAccessRule = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList $newFilePermList;
-	$NewAcl.SetAccessRule($fileSystemAccessRule); Set-Acl -Path $InputPath -AclObject $NewAcl" "Changing permissions..."
+	Elevate-Task "Write-Host 'Setting $type $permission on $InputPath...';`$NewAcl = Get-Acl -Path $InputPath; `$newFilePermList = '$id', '$permission', '$type';
+	`$fileSystemAccessRule = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList `$newFilePermList;
+	`$NewAcl.SetAccessRule(`$fileSystemAccessRule); Set-Acl -Path $InputPath -AclObject `$NewAcl" "Changing permissions..."
 }
 
 
