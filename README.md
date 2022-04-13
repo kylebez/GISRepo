@@ -23,3 +23,5 @@
    To clear the hash and force a fresh export, delete the hash files or run `git clear-aprx-diff`.
    
    **Please note:** There is odd behavior when commiting through VSCode GUI. this works best through command line commits.
+   
+   #TODO: Need to replace all the UAC workarounf stuff with runas
