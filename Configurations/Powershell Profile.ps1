@@ -107,7 +107,7 @@ function Elevate-Task($command, $message){
 				return
 			}
 		}
-		Write-Output "Running the task in a seperate process...`n"
+		Write-Output "Running the task in a seperate admin process...`n"
 		Start-Process -FilePath $p -ArgumentList "powershell ", " -NoExit -Command `"$command; Start-Sleep -s 3; Exit;`""
 		Pause
 	}
@@ -262,8 +262,7 @@ function manage-files-admin {
 		if($mappedOp){
 			$b = " "+$o[$c]
 		}
-		$commandString = '"'+"Write-Host 'Performing $operation on $a...';"+$operation+"-Item $a"+$b+" -Recursive;Read-Host -Prompt 'Press enter key to exit';Exit"+'"'
-		. {shellrunas pwsh -Command $commandString}
+		Elevate-Task '"'+"Write-Host 'Performing $operation on $a...';"+$operation+"-Item $a"+$b+" -Recursive"+'"' "Performing file operation"
 	}	
 }
 
@@ -282,6 +281,23 @@ function make-link{
 	}
 	elseif ($Hard -eq $true){$type = "HardLink"}
 	else{$type = "SymbolicLink"}
-	New-Item -ItemType $type -Path $newpath -Target $targetpath
+	Elevate-Task "New-Item -ItemType $type -Path $newpath -Target $targetpath" "Making sym links"
 }
+
+function change-permissions{
+	#See https://docs.microsoft.com/en-us/dotnet/api/system.security.accesscontrol.filesystemrights for list of file permissions
+	[CmdletBinding()]
+	param(
+	[Parameter(Mandatory)][string]$InputPath,
+	[Parameter(Mandatory)][string]$id,
+	[Parameter(Mandatory)][ValidateSet("AppendData","ChangePermissions", "CreateDirectories", "CreateFiles", "Delete", "DeleteSubdirectoriesAndFiles",
+	"ExecuteFile","FullControl","ListDirectory","Modify","Read","ReadAndExecute","ReadAttributes","ReadData","ReadExtendedAttributes","ReadPermissions",
+	"Synchronize","TakeOwnership","Traverse","Write","WriteAttributes","WriteData","WriteExtendedAttributes")][string]$permission,
+	[Parameter(Mandatory)][ValidateSet("Allow","Deny")][string]$type
+	)
+	Elevate-Task "`$NewAcl = Get-Acl -Path $InputPath; `$newFilePermList = $id, $permission, $type; 
+	`$fileSystemAccessRule = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList $newFilePermList;
+	$NewAcl.SetAccessRule($fileSystemAccessRule); Set-Acl -Path $InputPath -AclObject $NewAcl" "Changing permissions..."
+}
+
 
