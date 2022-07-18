@@ -2,6 +2,8 @@ sal cadmin check-admin
 sal radmin runas-admin
 sal ruser runas-other-user
 sal suser shellrunas
+sal getsha Get-FileHash
+
 $notepadp="$Env:ProgramFiles\Notepad++\notepad++.exe"
 
 $adminAccount = "NNG\s_101270"
