@@ -287,6 +287,7 @@ function make-link{
 	}
 	elseif ($Hard -eq $true){$type = "HardLink"}
 	else{$type = "SymbolicLink"}
+	#TODO - doesn't handle paths with spaces, need to pass in literal quotations when appropriate
 	Elevate-Task "New-Item -ItemType $type -Path $newpath -Target $targetpath" "Making sym links"
 }
 
