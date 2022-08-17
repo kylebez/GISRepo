@@ -9,6 +9,8 @@ $notepadp="$Env:ProgramFiles\Notepad++\notepad++.exe"
 $adminAccount = "NNG\s_101270"
 $sysInternalsDir = "C:\SysInternals"
 
+if ($env:TERM_PROGRAM -eq "vscode") { . "$(code --locate-shell-integration-path pwsh)" }
+
 If ([Environment]::Is64BitProcess) {
 	$programFilesPath = $Env:ProgramFiles
 	$programFilesVar = '$Env:ProgramFiles'
