@@ -248,7 +248,7 @@ function manage-files-admin {
 	[CmdletBinding()]
 	param(
 	[Parameter(Mandatory)][ValidateSet("Rename","Remove","Move","Copy")] $operation,
-	[Parameter(Mandatory)][string[]]$InputPaths,
+	[Parameter(Mandatory)][string[]]$InputPaths, #If path has a space, must surround with "' '"
 	[string[]] $outputPathsOrNames
 	)
 	$i = @($InputPaths)
