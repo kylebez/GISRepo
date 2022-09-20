@@ -9,8 +9,6 @@ $notepadp="$Env:ProgramFiles\Notepad++\notepad++.exe"
 $adminAccount = "NNG\s_101270"
 $sysInternalsDir = "C:\SysInternals"
 
-if ($env:TERM_PROGRAM -eq "vscode") { . "$(code --locate-shell-integration-path pwsh)" }
-
 If ([Environment]::Is64BitProcess) {
 	$programFilesPath = $Env:ProgramFiles
 	$programFilesVar = '$Env:ProgramFiles'
@@ -173,6 +171,12 @@ function shellrunas{
 					foreach ($p in $Env:Path.Split(';')){
 						if(!(Test-Path -Path $p)){continue;}
 						if ($(check-if-file-in-path $p $fn)) {
+							if ($fn.indexOf('.msc') -eq -1){
+								$mscPatt = "^$fn"
+							} else {$mscPatt = "^$fn.msc"}
+							$mscFile = $(get-file-list $p | Select-String -Pattern $mscPatt | Out-String)
+							if (@($mscFile).length -eq 1)
+							{$fn = $fn+'.msc'}
 							echo Running:` $p\$fn
 							. ./shellrunas $p\$fn $args
 							break;
@@ -198,7 +202,7 @@ function get-file-list($path) {
 	return $(ls -af -Path $path -Name | out-string).split()
 }
 function check-if-file-in-path($path, $filename) {
-	return $($(get-file-list $path | Select-String -Pattern "^$filename\." | Out-String).indexOf($filename) -gt -1) 
+	return $($(get-file-list $path | Select-String -Pattern "^$filename" | Out-String).indexOf($filename) -gt -1) 
 }
 
 #CIM Uninstaller
@@ -248,7 +252,7 @@ function manage-files-admin {
 	[CmdletBinding()]
 	param(
 	[Parameter(Mandatory)][ValidateSet("Rename","Remove","Move","Copy")] $operation,
-	[Parameter(Mandatory)][string[]]$InputPaths, #If path has a space, must surround with "' '"
+	[Parameter(Mandatory)][string[]]$InputPaths,
 	[string[]] $outputPathsOrNames
 	)
 	$i = @($InputPaths)
@@ -289,7 +293,9 @@ function make-link{
 	}
 	elseif ($Hard -eq $true){$type = "HardLink"}
 	else{$type = "SymbolicLink"}
-	#TODO - doesn't handle paths with spaces, need to pass in literal quotations when appropriate
+	If($($newpath.IndexOf(' ')) -gt 0){$newpath = '''"'+$newpath+'"'''}
+	If($($targetpath.IndexOf(' ')) -gt 0){$targetpath = '''"'+$targetpath+'"'''}
+	Write-Host $targetpath
 	Elevate-Task "New-Item -ItemType $type -Path $newpath -Target $targetpath" "Making sym links"
 }
 
@@ -308,5 +314,3 @@ function change-permissions{
 	`$fileSystemAccessRule = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList `$newFilePermList;
 	`$NewAcl.SetAccessRule(`$fileSystemAccessRule); Set-Acl -Path $InputPath -AclObject `$NewAcl" "Changing permissions..."
 }
-
-
