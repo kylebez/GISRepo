@@ -9,6 +9,9 @@ $notepadp="$Env:ProgramFiles\Notepad++\notepad++.exe"
 $adminAccount = "NNG\s_101270"
 $sysInternalsDir = "C:\SysInternals"
 
+$handlePathSpaceBegin = '''"'
+$handlePathSpaceEnd = '''"'
+
 If ([Environment]::Is64BitProcess) {
 	$programFilesPath = $Env:ProgramFiles
 	$programFilesVar = '$Env:ProgramFiles'
@@ -194,6 +197,8 @@ function shellrunas{
 $runmsiexec = {
 		param ([string]$handle,[string]$file,[bool]$uninstall)
 		if ($uninstall -eq $true){$handle = '/x'}
+		if ($file -like "* *")
+		{$file = '''"' + $file + '"''' }
 		. ./shellrunas powershell -WindowStyle "Hidden" -Command "msiexec $handle $file"; Break;
 	}
 
