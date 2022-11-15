@@ -1,15 +1,9 @@
 
 [CmdletBinding()]
 param (
-	[Parameter(Mandatory = $true, ParameterSetName = 'UsingName', Position = 0)]
-	[switch]$Name,
-	[Parameter(Mandatory = $true, ParameterSetName = 'UsingPath', Position = 0)]
-	[ValidateScript({ Test-Path -IsValid $_ })]
-	[string]$newCondaEnvPath,
-	[Parameter(Mandatory = $true, ParameterSetName = 'UsingName', Position = 1)]
-	[string]$newCondaEnvName,
-	[Parameter(Mandatory = $true, ParameterSetName = 'UsingName', Position = 2)]
-	[Parameter(Mandatory = $true, ParameterSetName = 'UsingPath', Position = 1)]
+	[Parameter(Mandatory = $true, Position = 0)]
+	[string]$newCondaEnv,
+	[Parameter(Mandatory = $true, Position = 1)]
 	[ValidateScript({ Test-Path -IsValid $_ })]
 	[string]$cusLibPath,
 	[string]$logFile = $null
@@ -35,8 +29,13 @@ if (!(Test-Path $logFile)) {
 }
 $logFile = $(Resolve-Path $logFile).Path
 
+if (Test-Path $newCondaEnv -PathType 'Container'){
+	$newCondaEnvPath = $newCondaEnv
+	$newCondaEnvName = Split-Path -Leaf $newCondaEnvPath
+}
+else {$newCondaEnvName = $newCondaEnv}
+
 $thisScript = { try {
-		IF (!$Name) { $newCondaEnvName = Split-Path -Leaf $newCondaEnvPath }
 		# Different Env vars for C:\Program Files if 32 or 64 bit, need to declare it AND the variable string itself (for passing into process later)
 		If ([Environment]::Is64BitProcess) {
 			$programFilesPath = $Env:ProgramFiles
@@ -80,8 +79,6 @@ $thisScript = { try {
 		$GISDefEnvName = "arcgispro-py3"
 		$GISEnvPath = $pythonExecDir + "envs\"
 		$GISNewEnv = "`"$GISEnvPath$newCondaEnvName`""
-		$GISDefEnv = "`"$GISEnvPath$GISDefEnvName`""
-		IF ($Name) { $newCondaEnvPath = $GISNewEnv }
 
 		#function to check admin
 		function Check-Admin{
@@ -103,7 +100,7 @@ $thisScript = { try {
 				if(!$NoCheck){
 					$UserCheckpointInput = 0
 					:userInput while ($UserCheckpointInput -notin "c", "r", "a" ) {
-						$UserCheckpointInput = $(Read-Host "Check output for errors. Continue, retry, or abort? [c/r/a]").ToLower()
+						$UserCheckpointInput = $(Read-Host "Check output for non-DEBUG errors. Inconsistent environment is OK. Continue, retry, or abort? [c/r/a]").ToLower()
 						switch ($UserCheckpointInput) {
 							"c" { "Continuing..." | Out-Host; $isAcceptable = $true; break userInput }
 							"r" { "Retrying..." | Out-Host; break userInput }
@@ -132,8 +129,18 @@ $thisScript = { try {
 					#Check to see if conda sees this as an environment (i.e. if it is properly installed)
 					$envs = (. ./conda info -e --json | ConvertFrom-Json).envs | where {$newCondaEnvName -eq $(Split-Path $_ -Leaf)}
 					Write-Host "Deleting environment, this can take a while"
-					#Sometimes a junction to the environment will mess up the removal, so remove it first - might need admin
-					$envs | where { $_ -eq $($GISEnvPath) } | % {$e = Get-Item $_; If ($e -ne $null -and $e.LinkType -eq 'Junction'){Remove-Item $e -Force}}
+					Write-Host "Deleting environment, this can take a while"
+					If (!$newCondaEnvPath) {
+						(. ./conda env list) | % { $condaEnvList += ";$_" }
+						$condaEnvList = ($condaEnvList -split ';').Where({ $_ -match '^(?:base)' }, "SkipUntil")
+						$selectedCondaEnvName = $condaEnvList | Select-String "^$([regex]::escape($newCondaEnvName))\b" | Select-Object -ExpandProperty "Matches" -First 1 | Select-Object -ExpandProperty "Value"
+						$selectedCondaEnvPath = $condaEnvList | Select-String "(?<=$([regex]::escape($newCondaEnvName))\s+)\w.+" | Select-Object -ExpandProperty "Matches" -First 1 | Select-Object -ExpandProperty "Value"
+						If ($selectedCondaEnvName -ne $newCondaEnvName -or !$(Test-Path "$selectedCondaEnvPath")) { Write-Error 'Error resolving conda environment!! Try using environment path instead!'; Exit 1 }
+						$condaEnvTarget = (Get-Item $selectedCondaEnvPath).Target
+						If($condaEnvTarget){
+							$newCondaEnvPath = $selectedCondaEnvName
+						} Else {$newCondaEnvPath = $condaEnvTarget}
+					}
 					$env = $envs|where{$_ -eq $newCondaEnvPath}
 					#If properly installed, try to remove the environment the proper way
 					If($env -ne $null){
@@ -150,7 +157,6 @@ $thisScript = { try {
 						$remSymLinkCommand = "cmd /c rmdir `"$($GISEnvPath.Replace(' ','` '))`""
 						Elevate-Task $remSymLinkCommand "Attempting to delete symlink"
 					}
-					Write-Host "Deletion complete"
 					Write-Host "Deletion complete"
 				}
 		}
