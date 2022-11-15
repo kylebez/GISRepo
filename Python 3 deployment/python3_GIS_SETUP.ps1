@@ -195,6 +195,7 @@ $thisScript = { try {
 		$mkLinks = "If (!(Test-Path $newCusLibPath)){New-Item -Path $newCusLibPath -ItemType Junction -Value $cusLibPath};If (!(Test-Path $GISNewEnv)) {New-Item -Path $GISNewEnv -ItemType Junction -Value $newCondaEnvPath}"
 
 		# Creating script to write custom library to default python environment lookup
+		$arcnngLnkPath = $newCondaEnvPath + $sitePackages
 		$mkLinksDesc = "linking to custom library folder in new environment and to new environment in ArcGIS Pro env folder"
 
 		#Handle passing in a path with Program Files (containing a space) into the seperate powershell functions
