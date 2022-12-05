@@ -5,7 +5,7 @@ param (
 	[string]$newCondaEnv,
 	[Parameter(Mandatory = $true, Position = 1)]
 	[ValidateScript({ Test-Path -IsValid $_ })]
-	[string]$cusLibPath,
+	[string]$arcnngPath,
 	[string]$logFile = $null
 )
 class AbortException: System.Exception {
@@ -29,11 +29,11 @@ if (!(Test-Path $logFile)) {
 }
 $logFile = $(Resolve-Path $logFile).Path
 
-if (Test-Path $newCondaEnv -PathType 'Container'){
+if ((Test-Path $newCondaEnv -PathType 'Container') -or (!(Test-Path $newCondaEnv) -and ($newCondaEnv -replace '\\', '/') -match '[A-Z]:/\w+/.+')) {
 	$newCondaEnvPath = $newCondaEnv
 	$newCondaEnvName = Split-Path -Leaf $newCondaEnvPath
 }
-else {$newCondaEnvName = $newCondaEnv}
+else { $newCondaEnvName = $newCondaEnv}
 
 $thisScript = { try {
 		# Different Env vars for C:\Program Files if 32 or 64 bit, need to declare it AND the variable string itself (for passing into process later)
@@ -51,26 +51,12 @@ $thisScript = { try {
 			return $p.Replace($programFilesPath, "$programFilesVar")
 		}
 
-		# Extra info for log file, to seperate runs
+		# Extra info for log file, to separate runs
 		Write-Information "`n$(Get-Date)`nBegin Python 3 Setup...`n"
 
 		# Determine whether run on a GIS server or not, and find the correct Python script path
 		If (!(Test-Path $pythonExecDir)) {
 			$pythonExecDir = "$programFilesPath\ArcGIS\Server\framework\runtime\ArcGIS\bin\Python\"
-		}
-		
-		function Elevate-Task($command, $message){
-			#check if elevated, if so, run the string command
-			Write-Output `n$message
-			If (Check-Admin -eq $true){
-				Invoke-Expression $command
-			}
-			Else{
-				#Handle elevation if needed - NOTE NEED SHELLRUNAS from https://docs.microsoft.com/en-us/sysinternals/downloads/shellrunas
-				Write-Output "Running the task in a seperate process...`n"
-				Start-Process powershell -Verb runas -ArgumentList "-NoExit","-Command `"$command; Start-Sleep -s 3; Exit`"" >$null
-				Pause
-			}
 		}
 		
 		# Variable declarations once the python exec path is established
@@ -84,11 +70,32 @@ $thisScript = { try {
 		function Check-Admin{
 			return ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
 		}
+
+		function Elevate-Task($command, $message){
+			#check if elevated, if so, run the string command
+			Write-Output `n$message
+			If (Check-Admin -eq $true){
+				Invoke-Expression $command
+			}
+			Else{
+				#Handle elevation if needed - NOTE NEED SHELLRUNAS from https://docs.microsoft.com/en-us/sysinternals/downloads/shellrunas
+				$p = Read-Host -Prompt "Need elevation - what is the path to shellrunas (or 'N' if not installed)"
+				If ($p.ToUpper() -eq 'N' -or !(Test-Path $p.Trim('"'))) {
+					Write-Warning "Can't do this task automatically without the shellrunas utility. `nYou can download it from https://docs.microsoft.com/en-us/sysinternals/downloads/shellrunas `n ...Exiting..."
+					Exit 1
+				}
+				Else {
+					Write-Output "Running the task in a separate process...`n"
+					Start-Process -FilePath $p -ArgumentList "powershell ", " -NoExit -Command `"Write-Output '$message'; $command; Start-Sleep -s 3;`""
+					Pause
+				}
+			}
+		}
 		
 		# function to call an operation and allow user to cotinue, abort, or retry depending on op success
 		function script:Invoke-And-Set-Checkpoint ([string]$operation, [string]$StatusMessage, [switch]$NoCheck) {
 			$P = $operation -split " "
-			$callOp = $P[0] 
+			$callOp = $P[0]
 			$paramA = $P[1..($P.Length - 1)]
 
 			$isAcceptable = $false
@@ -116,7 +123,7 @@ $thisScript = { try {
 		Set-Location $condaDir
 		#Check if conda environment already exists, if it does, prompt to remove and reinstall
 		$GISEnvPath = $GISNewEnv.Trim('"')
-		If (Test-Path ($GISEnvPath)) {
+		If ((Test-Path $GISEnvPath) -or (Test-Path $newCondaEnvPath)) {
 			Write-Host "$newCondaEnvName already exists."
 			IF ($(Read-Host "Do you want to delete and reinstall? [y/n]").ToLower() -ne 'y') {
 				#Exit if no
@@ -128,7 +135,6 @@ $thisScript = { try {
 					#Delete environment if yes
 					#Check to see if conda sees this as an environment (i.e. if it is properly installed)
 					$envs = (. ./conda info -e --json | ConvertFrom-Json).envs | where {$newCondaEnvName -eq $(Split-Path $_ -Leaf)}
-					Write-Host "Deleting environment, this can take a while"
 					Write-Host "Deleting environment, this can take a while"
 					If (!$newCondaEnvPath) {
 						(. ./conda env list) | % { $condaEnvList += ";$_" }
@@ -143,10 +149,21 @@ $thisScript = { try {
 					}
 					$env = $envs|where{$_ -eq $newCondaEnvPath}
 					#If properly installed, try to remove the environment the proper way
+					If($env -eq $null -and $newCondaEnvPath -ne $null){
+						$env = $newCondaEnvPath
+					}
+					Elseif ($env -eq $null) { Write-Host "Error getting conda environment"; Exit 1}
 					If($env -ne $null){
-						 Invoke-And-Set-Checkpoint "deactivate $newCondaEnvName" -StatusMessage "Environment deactivating..." -NoCheck
+                        Write-Host "proswap to default environment..."
+		                #need to run as a background job or the shell will 'hang'
+		                Start-Job -Name proswap -InitializationScript ([scriptblock]::Create("cd "+(Handle-Program-Files-Space $condaDir))) -ScriptBlock { ./proswap $input } -InputObject $GISDefEnvName > $null
+		                Receive-Job proswap -Wait
+
+					    #Sometimes a junction to the environment will mess up the removal, so remove it first
+					    $envs | where { $_ -eq $GISEnvPath } | % { $e = Get-Item $_; If ($e -ne $null -and $e.LinkType -eq 'Junction') { Elevate-Task "Remove-Item '$e' -Force -Recurse" "Remove junction to new environment" }}
 						 Invoke-And-Set-Checkpoint "conda remove -p $newCondaEnvPath --all --yes"
 					}
+					Else { Write-Host "Can't use conda command to delete, will force delete"}
 					#Force delete any remaining environment folder
 					If ((Test-Path $newCondaEnvPath)){
 						$remEnvCommand = "Remove-Item $newCondaEnvPath -Recurse -Force"
@@ -187,41 +204,41 @@ $thisScript = { try {
 		Invoke-And-Set-Checkpoint "deactivate $newCondaEnvName" -StatusMessage "Environment deactivating..." -NoCheck
 
 		Write-Host "Installing dependencies..."
-		# TODO: Write dependency install code from config file
+		Write-Host "Installing svglib"
+		Invoke-And-Set-Checkpoint "conda install -p `"$newCondaEnvPath`" svglib --no-update-deps --yes --quiet"
+		Write-Host "Installing reportlab"
+		Invoke-And-Set-Checkpoint "conda install -p `"$newCondaEnvPath`" reportlab --no-update-deps --yes --quiet"
 
-		# TODO: Revise below
-		# Creating script to link to custom library folder in new environment and to new environment in ArcGIS Pro env folder
-		$newCusLibPath = $cusLibPath
-		$mkLinks = "If (!(Test-Path $newCusLibPath)){New-Item -Path $newCusLibPath -ItemType Junction -Value $cusLibPath};If (!(Test-Path $GISNewEnv)) {New-Item -Path $GISNewEnv -ItemType Junction -Value $newCondaEnvPath}"
-
-		# Creating script to write custom library to default python environment lookup
+		# Creating script to link to arcnng folder in new environment
 		$arcnngLnkPath = $newCondaEnvPath + $sitePackages
-		$mkLinksDesc = "linking to custom library folder in new environment and to new environment in ArcGIS Pro env folder"
+		$newArcnngPath = $arcnngLnkPath + "\arcnng3"
+		$mkLinks = "If (!(Test-Path $newArcnngPath)){New-Item -Path $newArcnngPath -ItemType Junction -Value $arcnngPath};If (!(Test-Path $GISNewEnv)) {New-Item -Path $GISNewEnv -ItemType Junction -Value $newCondaEnvPath}"
 
-		#Handle passing in a path with Program Files (containing a space) into the seperate powershell functions
+		$mkLinksDesc = "linking to arcnng folder in new environment and to new environment in ArcGIS Pro env folder"
+
+		#Handle passing in a path with Program Files (containing a space) into the separate powershell functions
 		$mkLinks = Handle-Program-Files-Space $mkLinks
-		$appendToPth = Handle-Program-Files-Space $appendToPth
 
-		# run in a seperate elevated process
+		# run in a separate elevated process (will always need to reenter password since they turned off UAC)
 		# Write informational explanation and then run the created commands
-		$process = "Write-Output ``n'$mkLinksDesc'; $mkLinks;"
+		$process = "Write-Output ``n'$mkLinksDesc'; $mkLinks"
 		$process = "cd $HOME; $process"
-		Elevate-Task $process "Attempting to create symlinks"
+		Elevate-Task $process "Creating symlinks"
+
 		#Test that the previous job was successful
 		#REFACTOR
-		If (!(Test-Path $cusLibPath)){Write-Warning "Error creating custom library link, please try it manually. Custom libraries will not work without it."}
-		If (!(Test-Path ($GISNewEnv.Trim('"')))) { Write-Warning "Error creating new environment link, please try it manually. Cannot reference this new environment by name without it."}
-		If (!$(Select-String -Quiet -Path $arcGISProPthFile -SimpleMatch $($appendToPthStmt.Replace('`"""', '"')))) { Write-Error "Error writing to pth file, try it manually" }
+		If (!(Test-Path $newArcnngPath)){Write-Warning "Error creating arcnng link, please do this manually"}
+		If (!(Test-Path ($GISNewEnv.Trim('"')))) { Write-Warning "Error creating new environment link, please do this manually"}
 
 		Write-Host "setting new environment as default `n"
 		#need to run as a background job or the shell will 'hang' at the new environment input prompt
-		Start-Job -Name proswap -InitializationScript ([scriptblock]::Create("cd "+(Handle-Program-Files-Space $condaDir))) -ScriptBlock { ./proswap $input } -InputObject $newCondaEnvPath > $null
-		Receive-Job proswap -Wait 
+		Start-Job -Name proswapjob -InitializationScript ([scriptblock]::Create("cd "+(Handle-Program-Files-Space $condaDir))) -ScriptBlock { ./proswap $input } -InputObject $newCondaEnvPath > $null
+		Receive-Job proswapjob -Wait
 		Write-Host "`nScript complete"
 	}
-	catch [AbortException] { 
+	catch [AbortException] {
 		Write-Output $_.Exception.abortMessage; return
-	} 
+	}
 	catch { return $_ } }
 
 . $thisScript *>&1 | Tee-Object -FilePath $logFile -Append
