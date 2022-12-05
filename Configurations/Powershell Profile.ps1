@@ -258,32 +258,44 @@ function manage-files-admin {
 	param(
 	[Parameter(Mandatory)][ValidateSet("Rename","Remove","Move","Copy")] $operation,
 	[Parameter(Mandatory)][string[]]$InputPaths,
-	[string[]] $outputPathsOrNames
+	[string[]] $outputPathsOrNames,
+	[switch] $Force
 	)
 	$i = @($InputPaths)
 	if ($operation -ne 'Remove'){
 		$mappedOp = $true
-		if($outputPathsOrNames -eq ''){throw "$operation operation requires addtional parameter"}
+		if($outputPathsOrNames -eq ''){throw "$operation operation requires additional parameter"}
 		$o = @($outputPathsOrNames)
 		if($i.length -ne $o.length){throw "Parameter arrays don't match each others length"}
 	}
 	else{$mappedOp = $false}
+	if($Force -eq $true){
+		$f=" -Force"
+	}
+	else{$f=""}
 	
 	for($c=0;$c -le ($i.length-1);$c++){
 		$a=$i[$c]
+		$a=handle-spaces $a
 		$b=""
 		if($mappedOp){
 			$b = " "+$o[$c]
 		}
+		$b=handle-spaces $b
 		if ($operation -eq 'Copy'){
 			$recurse = " -Recurse"
 		}
 		else{$recurse=""}
-		Elevate-Task "Write-Host 'Performing $operation on $a...';$operation-Item $a$b$recurse" "Performing file operation"
+		Elevate-Task "Write-Host 'Performing $operation on $a...';$operation-Item $a$b$recurse$f" "Performing file operation"
 	}	
 }
 
 sal mf manage-files-admin
+
+function handle-spaces ($p){
+	If($($p.IndexOf(' ')) -gt 0){$p = '''"'+$p+'"'''} 
+	return $p
+}
 
 function make-link{
 	Param(
@@ -298,9 +310,8 @@ function make-link{
 	}
 	elseif ($Hard -eq $true){$type = "HardLink"}
 	else{$type = "SymbolicLink"}
-	If($($newpath.IndexOf(' ')) -gt 0){$newpath = '''"'+$newpath+'"'''}
-	If($($targetpath.IndexOf(' ')) -gt 0){$targetpath = '''"'+$targetpath+'"'''}
-	Write-Host $targetpath
+	$newpath=handle-spaces $newpath
+	$targetpath=handle-spaces $targetpath
 	Elevate-Task "New-Item -ItemType $type -Path $newpath -Target $targetpath" "Making sym links"
 }
 
@@ -319,3 +330,5 @@ function change-permissions{
 	`$fileSystemAccessRule = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList `$newFilePermList;
 	`$NewAcl.SetAccessRule(`$fileSystemAccessRule); Set-Acl -Path $InputPath -AclObject `$NewAcl" "Changing permissions..."
 }
+
+
