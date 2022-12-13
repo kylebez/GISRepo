@@ -65,6 +65,7 @@ $thisScript = { try {
 		$GISDefEnvName = "arcgispro-py3"
 		$GISEnvPath = $pythonExecDir + "envs\"
 		$GISNewEnv = "`"$GISEnvPath$newCondaEnvName`""
+		If ($newCondaEnvPath -eq $null) {$newCondaEnvPath = $GISNewEnv}
 
 		#function to check admin
 		function Check-Admin{
@@ -94,7 +95,23 @@ $thisScript = { try {
 		
 		# function to call an operation and allow user to cotinue, abort, or retry depending on op success
 		function script:Invoke-And-Set-Checkpoint ([string]$operation, [string]$StatusMessage, [switch]$NoCheck) {
-			$P = $operation -split " "
+			# if there is a path in the operation (delimited by ")
+				# find the path, and re-insert the path in the parameter array derived from operation split by whitespace
+				# (so spaces in the path name are not split) 
+			[void]::(($operation -replace '"{2,}', '"') -match '(.+?)(("+)\w:(\\|/)([\w-_\s]+(\4*))+(\3)*)(.*)')
+			$m = $Matches
+			If ($m -ne $null) {
+				$i = @(); $m.Keys | % {if ($m[$_] -match '^"+.+"+') {$i += $_ }}
+				If ($i.count -eq 1) {
+					$o = $operation -split $m[$i], 0, "SimpleMatch"; $oo = @()
+					for ($t = 1; $t -lt $o.Length + ($o.Length - 1); $t += 2) {
+						$oo += $o[$t - 1], $m[$i]
+					}
+					If ($oo.Length -gt 0) { $o = $oo + $o[$o.Length - 1] }
+					$P = @(); $o | % {if ($_ -ne $m[$i]){$P += $_ -split " " }	else {$P += $_ }}
+				}
+			}
+			else { $P = $operation -split " " }
 			$callOp = $P[0]
 			$paramA = $P[1..($P.Length - 1)]
 
@@ -137,10 +154,10 @@ $thisScript = { try {
 					$envs = (. ./conda info -e --json | ConvertFrom-Json).envs | where {$newCondaEnvName -eq $(Split-Path $_ -Leaf)}
 					Write-Host "Deleting environment, this can take a while"
 					If (!$newCondaEnvPath) {
-						(. ./conda env list) | % { $condaEnvList += ";$_" }
+						(. ./conda info -e) | % { $condaEnvList += ";$_" }
 						$condaEnvList = ($condaEnvList -split ';').Where({ $_ -match '^(?:base)' }, "SkipUntil")
 						$selectedCondaEnvName = $condaEnvList | Select-String "^$([regex]::escape($newCondaEnvName))\b" | Select-Object -ExpandProperty "Matches" -First 1 | Select-Object -ExpandProperty "Value"
-						$selectedCondaEnvPath = $condaEnvList | Select-String "(?<=$([regex]::escape($newCondaEnvName))\s+)\w.+" | Select-Object -ExpandProperty "Matches" -First 1 | Select-Object -ExpandProperty "Value"
+					$selectedCondaEnvPath = $condaEnvList | Select-String "(?<=$([regex]::escape($newCondaEnvName))\s+\*?\s+)\w.+" | Select-Object -ExpandProperty "Matches" -First 1 | Select-Object -ExpandProperty "Value"
 						If ($selectedCondaEnvName -ne $newCondaEnvName -or !$(Test-Path "$selectedCondaEnvPath")) { Write-Error 'Error resolving conda environment!! Try using environment path instead!'; Exit 1 }
 						$condaEnvTarget = (Get-Item $selectedCondaEnvPath).Target
 						If($condaEnvTarget){
@@ -161,12 +178,12 @@ $thisScript = { try {
 
 					    #Sometimes a junction to the environment will mess up the removal, so remove it first
 					    $envs | where { $_ -eq $GISEnvPath } | % { $e = Get-Item $_; If ($e -ne $null -and $e.LinkType -eq 'Junction') { Elevate-Task "Remove-Item '$e' -Force -Recurse" "Remove junction to new environment" }}
-						 Invoke-And-Set-Checkpoint "conda remove -p $newCondaEnvPath --all --yes"
+						 Invoke-And-Set-Checkpoint "conda remove -p `"$newCondaEnvPath`" --all --yes"
 					}
 					Else { Write-Host "Can't use conda command to delete, will force delete"}
 					#Force delete any remaining environment folder
 					If ((Test-Path $newCondaEnvPath)){
-						$remEnvCommand = "Remove-Item $newCondaEnvPath -Recurse -Force"
+						$remEnvCommand = "Remove-Item `"$newCondaEnvPath`" -Recurse -Force"
 						Elevate-Task $remEnvCommand "Attempting to delete environment folder"
 					}
 					#Delete the symlink to the enivronment
