@@ -29,7 +29,7 @@ if (!(Test-Path $logFile)) {
 }
 $logFile = $(Resolve-Path $logFile).Path
 
-if ((Test-Path $newCondaEnv -PathType 'Container') -or (!(Test-Path $newCondaEnv) -and ($newCondaEnv -replace '\\', '/') -match '[A-Z]:/\w+/.+')) {
+if (($newCondaEnv -replace '\\', '/').Trim('"') -match '[A-Z]:/\w+/.+') {
 	$newCondaEnvPath = $newCondaEnv
 	$newCondaEnvName = Split-Path -Leaf $newCondaEnvPath
 }
@@ -49,6 +49,10 @@ $thisScript = { try {
 		#Sometimes need to reparse the string to account for space in Program Files path
 		function Handle-Program-Files-Space ([string]$p) {
 			return $p.Replace($programFilesPath, "$programFilesVar")
+		}
+
+		function Handle-QuotedString-Concat ([string]$s1, [string]$s2) {
+			return '"'+$s1.Trim('"')+$s2.Trim('"')+'"'
 		}
 
 		# Extra info for log file, to separate runs
@@ -97,8 +101,9 @@ $thisScript = { try {
 		function script:Invoke-And-Set-Checkpoint ([string]$operation, [string]$StatusMessage, [switch]$NoCheck) {
 			# if there is a path in the operation (delimited by ")
 				# find the path, and re-insert the path in the parameter array derived from operation split by whitespace
-				# (so spaces in the path name are not split) 
-			[void]::(($operation -replace '"{2,}', '"') -match '(.+?)(("+)\w:(\\|/)([\w-_\s]+(\4*))+(\3)*)(.*)')
+				# (so spaces in the path name are not split)
+            $operation = $operation -replace '"{2,}', '"'
+			[void]::($operation -match '(.+?)(("+)\w:(\\|/)([\w-_\s]+(\4*))+(\3)*)(.*)')
 			$m = $Matches
 			If ($m -ne $null) {
 				$i = @(); $m.Keys | % {if ($m[$_] -match '^"+.+"+') {$i += $_ }}
@@ -140,7 +145,7 @@ $thisScript = { try {
 		Set-Location $condaDir
 		#Check if conda environment already exists, if it does, prompt to remove and reinstall
 		$GISEnvPath = $GISNewEnv.Trim('"')
-		If ((Test-Path $GISEnvPath) -or (Test-Path $newCondaEnvPath)) {
+		If ((Test-Path $GISEnvPath -PathType Container) -or (Test-Path $newCondaEnvPath -PathType Container)) {
 			Write-Host "$newCondaEnvName already exists."
 			IF ($(Read-Host "Do you want to delete and reinstall? [y/n]").ToLower() -ne 'y') {
 				#Exit if no
@@ -227,8 +232,8 @@ $thisScript = { try {
 		Invoke-And-Set-Checkpoint "conda install -p `"$newCondaEnvPath`" reportlab --no-update-deps --yes --quiet"
 
 		# Creating script to link to arcnng folder in new environment
-		$arcnngLnkPath = $newCondaEnvPath + $sitePackages
-		$newArcnngPath = $arcnngLnkPath + "\arcnng3"
+		$arcnngLnkPath = Handle-QuotedString-Concat $newCondaEnvPath $sitePackages
+		$newArcnngPath = Handle-QuotedString-Concat $arcnngLnkPath "\arcnng3"
 		$mkLinks = "If (!(Test-Path $newArcnngPath)){New-Item -Path $newArcnngPath -ItemType Junction -Value $arcnngPath};If (!(Test-Path $GISNewEnv)) {New-Item -Path $GISNewEnv -ItemType Junction -Value $newCondaEnvPath}"
 
 		$mkLinksDesc = "linking to arcnng folder in new environment and to new environment in ArcGIS Pro env folder"
@@ -249,7 +254,7 @@ $thisScript = { try {
 
 		Write-Host "setting new environment as default `n"
 		#need to run as a background job or the shell will 'hang' at the new environment input prompt
-		Start-Job -Name proswapjob -InitializationScript ([scriptblock]::Create("cd "+(Handle-Program-Files-Space $condaDir))) -ScriptBlock { ./proswap $input } -InputObject $newCondaEnvPath > $null
+		Start-Job -Name proswapjob -InitializationScript ([scriptblock]::Create("cd " + (Handle-Program-Files-Space $condaDir))) -ScriptBlock { ./proswap $input } -InputObject (Handle-Program-Files-Space $newCondaEnvPath) > $null
 		Receive-Job proswapjob -Wait
 		Write-Host "`nScript complete"
 	}
