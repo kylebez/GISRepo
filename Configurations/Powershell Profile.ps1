@@ -334,5 +334,6 @@ function change-permissions{
 # Used to theme powershell
 # Install oh-my-posh with winget first
 # Check these docs: https://ohmyposh.dev/docs/
+# Need a nerd font from https://www.nerdfonts.com/
 oh-my-posh init pwsh --config "$env:POSH_THEMES_PATH\atomic.omp.json" | Invoke-Expression
 
