@@ -331,4 +331,8 @@ function change-permissions{
 	`$NewAcl.SetAccessRule(`$fileSystemAccessRule); Set-Acl -Path $InputPath -AclObject `$NewAcl" "Changing permissions..."
 }
 
+# Used to theme powershell
+# Install oh-my-posh with winget first
+# Check these docs: https://ohmyposh.dev/docs/
+oh-my-posh init pwsh --config "$env:POSH_THEMES_PATH\atomic.omp.json" | Invoke-Expression
 
