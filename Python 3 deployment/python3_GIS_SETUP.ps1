@@ -6,7 +6,8 @@ param (
 	[Parameter(Mandatory = $true, Position = 1)]
 	[ValidateScript({ Test-Path -IsValid $_ })]
 	[string]$arcnngPath,
-	[string]$logFile = $null
+	[string]$logFile = $null,
+	[switch]$fast
 )
 class AbortException: System.Exception {
 	$abortMessage
@@ -199,14 +200,23 @@ $thisScript = { try {
 					Write-Host "Deletion complete"
 				}
 		}
-		Write-Host "`nCleaning conda cache..."
-		Invoke-And-Set-Checkpoint "conda clean --all --yes --quiet" -NoCheck
 		Write-Host "`nCreating conda environment..."
 		Invoke-And-Set-Checkpoint "conda create -p `"$newCondaEnvPath`" --clone $GISDefEnvName --pinned --yes"
 		Write-Host "`nCompleted env creation script"
 
 		Write-Host "Setting conda configurations..."
 		#REFACTOR conda config getter and setter
+		$condaLocalRepodata = $(. ./conda config --system --get local_repodata_ttl)
+		If ($fast){
+			Write-Host "Fast parameter set, so setting to local repodata only"
+			If ($condaLocalRepodata -eq $null -or ![System.Convert]::ToBoolean($condaLocalRepodata)) {
+				. ./conda config --system --set local_repodata_ttl 1
+			}
+		}
+		ElseIf ([System.Convert]::ToBoolean($condaLocalRepodata)) {
+			. ./conda config --system --set local_repodata_ttl 0
+		}
+		Write-Host "Verifying correct conda channels"
 		$condaChannels = $(. ./conda config --get channels)
 		If($condaChannels -eq $null){
 			. ./conda config --prepend channels defaults
