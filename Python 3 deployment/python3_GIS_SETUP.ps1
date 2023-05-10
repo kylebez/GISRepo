@@ -5,7 +5,6 @@ param (
 	[string]$newCondaEnv,
 	[Parameter(Mandatory = $true, Position = 1)]
 	[ValidateScript({ Test-Path -IsValid $_ })]
-	[string]$arcnngPath,
 	[string]$logFile = $null,
 	[switch]$fast
 )
@@ -30,7 +29,9 @@ if (!(Test-Path $logFile)) {
 }
 $logFile = $(Resolve-Path $logFile).Path
 
-if (($newCondaEnv -replace '\\', '/').Trim('"') -match '[A-Z]:/\w+/.+') {
+$pathregex = '[A-Z]:((\\|\/)[\w-_\s]+)+'
+
+if (($newCondaEnv -replace '\\', '/').Trim('"') -match $pathregex) {
 	$newCondaEnvPath = $newCondaEnv
 	$newCondaEnvName = Split-Path -Leaf $newCondaEnvPath
 }
@@ -104,17 +105,29 @@ $thisScript = { try {
 				# find the path, and re-insert the path in the parameter array derived from operation split by whitespace
 				# (so spaces in the path name are not split)
             $operation = $operation -replace '"{2,}', '"'
-			[void]::($operation -match '(.+?)(("+)\w:(\\|/)([\w-_\s]+(\4*))+(\3)*)(.*)')
+			[void]::($operation -match '"'+$pathregex+'"')
+			$m = $Matches
 			$m = $Matches
 			If ($m -ne $null) {
 				$i = @(); $m.Keys | % {if ($m[$_] -match '^"+.+"+') {$i += $_ }}
 				If ($i.count -eq 1) {
-					$o = $operation -split $m[$i], 0, "SimpleMatch"; $oo = @()
-					for ($t = 1; $t -lt $o.Length + ($o.Length - 1); $t += 2) {
-						$oo += $o[$t - 1], $m[$i]
+					$path = $m[$i]
+					$o = $operation -split $path,0,"SimpleMatch"
+					$ol = $o.length
+					if($ol -gt 0){
+						$temp = @()
+						for ($t=0;$t -lt $ol;$t++){
+							$temp+=$o[$t]
+							if($t -ne $ol-1){$temp+=$path}
+						}
+						$o = $temp
 					}
-					If ($oo.Length -gt 0) { $o = $oo + $o[$o.Length - 1] }
-					$P = @(); $o | % {if ($_ -ne $m[$i]){$P += $_ -split " " }	else {$P += $_ }}
+					$P = @()
+					foreach ($t in $o){
+						if ($t -ne $path){
+						$P += $t.Trim() -split " "}
+						else {$P += $t.Trim('"')}
+					}
 				}
 			}
 			else { $P = $operation -split " " }
@@ -130,7 +143,9 @@ $thisScript = { try {
 				if(!$NoCheck){
 					$UserCheckpointInput = 0
 					:userInput while ($UserCheckpointInput -notin "c", "r", "a" ) {
-						$UserCheckpointInput = $(Read-Host "Check output for non-DEBUG errors. Inconsistent environment is OK. Continue, retry, or abort? [c/r/a]").ToLower()
+						$UserCheckpointInput =$(Read-Host "Check output for non-DEBUG errors. Inconsistent environment is OK. 
+						Note if environment install was interrupted, the folder is likely corrupted, and you should abort and call this process again, without using retry.	(Call 'conda clean --all' first, or do not use -Fast parameter)
+						Continue, retry, or abort? [c/r/a]").ToLower()
 						switch ($UserCheckpointInput) {
 							"c" { "Continuing..." | Out-Host; $isAcceptable = $true; break userInput }
 							"r" { "Retrying..." | Out-Host; break userInput }
@@ -241,12 +256,9 @@ $thisScript = { try {
 		Write-Host "Installing reportlab"
 		Invoke-And-Set-Checkpoint "conda install -p `"$newCondaEnvPath`" reportlab --no-update-deps --yes --quiet"
 
-		# Creating script to link to arcnng folder in new environment
-		$arcnngLnkPath = Handle-QuotedString-Concat $newCondaEnvPath $sitePackages
-		$newArcnngPath = Handle-QuotedString-Concat $arcnngLnkPath "\arcnng3"
-		$mkLinks = "If (!(Test-Path $newArcnngPath)){New-Item -Path $newArcnngPath -ItemType Junction -Value $arcnngPath};If (!(Test-Path $GISNewEnv)) {New-Item -Path $GISNewEnv -ItemType Junction -Value $newCondaEnvPath}"
+		$mkLinks = "If (!(Test-Path $GISNewEnv)) {New-Item -Path $GISNewEnv -ItemType Junction -Value $newCondaEnvPath}"
 
-		$mkLinksDesc = "linking to arcnng folder in new environment and to new environment in ArcGIS Pro env folder"
+		$mkLinksDesc = "linking new environment in ArcGIS Pro env folder"
 
 		#Handle passing in a path with Program Files (containing a space) into the separate powershell functions
 		$mkLinks = Handle-Program-Files-Space $mkLinks
@@ -259,7 +271,6 @@ $thisScript = { try {
 
 		#Test that the previous job was successful
 		#REFACTOR
-		If (!(Test-Path $newArcnngPath)){Write-Warning "Error creating arcnng link, please do this manually"}
 		If (!(Test-Path ($GISNewEnv.Trim('"')))) { Write-Warning "Error creating new environment link, please do this manually"}
 
 		Write-Host "setting new environment as default `n"
