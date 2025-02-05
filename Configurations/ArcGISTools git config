@@ -57,3 +57,6 @@
 	merge = refs/heads/KB
 [alias]
 	aprx-diff = "!sh $(git rev-parse --git-dir)/export-map.sh \"${1//\\//}\" && git diff --cached ${1%.*}-export.mapx"
+	clear-aprx-diff = "!rm -f $(git rev-parse --git-dir)/GIS_SERVICE_HASH && rm -f $(git rev-parse --git-dir)/GIS_SERVICE_EXPORT_HASH && echo Done"
+[advice]
+	useCoreFSMonitorConfig = false

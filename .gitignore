@@ -1,3 +1,8 @@
 Python 3 deployment/python3setup.log,
 Configurations/*.rdg
-desktop.ini
+Configurations/Automation/autostoreopen.ps1
+Configurations/Automation/taskcreate_autostoreopen.bat
+Configurations/desktop.ini
+Configurations/*.ibak
+Configurations/localpwsafe_010.ibak
+Configurations/*.psafe3
