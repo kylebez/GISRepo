@@ -4,7 +4,18 @@ sal ruser runas-other-user
 sal suser shellrunas
 sal getsha Get-FileHash
 
+if ($env:TERM_PROGRAM -eq "vscode") { . "$(code --locate-shell-integration-path pwsh)" }
+
 $notepadp="$Env:ProgramFiles\Notepad++\notepad++.exe"
+
+if (Get-PSDrive S -ErrorAction SilentlyContinue) {
+    Write-Host 'The S: drive is already in use.'
+} else {
+Net use S: /persistent:yes \\nng\network\COMMON}
+if (Get-PSDrive H -ErrorAction SilentlyContinue) {
+    Write-Host 'The H: drive is already in use.'
+} else {
+Net use H: /persistent:yes \\nng\network\OmaUsers1\t101270}
 
 $adminAccount = "NNG\s_101270"
 $sysInternalsDir = "C:\SysInternals"
@@ -334,6 +345,5 @@ function change-permissions{
 # Used to theme powershell
 # Install oh-my-posh with winget first
 # Check these docs: https://ohmyposh.dev/docs/
-# Need a nerd font from https://www.nerdfonts.com/
-oh-my-posh init pwsh --config "$env:POSH_THEMES_PATH\atomic.omp.json" | Invoke-Expression
+# oh-my-posh init pwsh --config "$env:POSH_THEMES_PATH\atomic.omp.json" | Invoke-Expression
 

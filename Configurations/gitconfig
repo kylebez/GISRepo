@@ -7,17 +7,18 @@
 	required = true
 [http]
 	sslBackend = openssl
-	sslCAInfo = C:/Users/t98007/AppData/Local/Programs/Git/mingw64/ssl/certs/ca-bundle.crt
+	sslCAInfo = C:/Program Files/Git/mingw64/etc/ssl/certs/ca-bundle.crt
+	sslverify = false
 [core]
 	autocrlf = true
 	fscache = true
 	symlinks = true
-	editor = \"C:\\\\Program Files\\\\Notepad++\\\\notepad++.exe\" -multiInst -notabbar -nosession -noPlugin
+	editor = wordpad
 	useBuiltinFSMonitor = true
 [pull]
 	rebase = false
 [credential]
-	helper = manager-core
+	helper = manager
 [credential "https://dev.azure.com"]
 	useHttpPath = true
 [init]
@@ -34,3 +35,7 @@
   sap = "!f() { git switch $1 && git stash pop; }; f"
   update-master = "!f() { cb=$(git branch --show-current); git sas master && git pull && git sap $cb; }; f"
   oops-wrong-branch = "!f() { csha=$(git rev-parse HEAD);psha=$(git rev-parse HEAD~1);cb=$(git branch --show-current); git checkout $1 && git cherry-pick $csha && git checkout $cb && git reset --mixed $psha; }; f"
+  clean-refs = reflog expire --expire-unreachable=now --all
+  check-m-sync = "!f() { ff() { echo \"$(git branch --list \"$1\")\"; }; m=$(ff \"master\"); if [ -z \"$m\" ]; then m=$(ff \"main\"); fi; m=$(echo \"$m\" | xargs); echo \"This branch is $(git rev-list --left-right --count \"$m\"...HEAD | awk '{print $1}') behind the main or master branch\"; }; f"
+  update-check-sync = "!f() { git update-master; git check-m-sync; }; f"
+  ucs = update-check-sync
