@@ -42,3 +42,4 @@
   list-flagged = '!(git ls-files -v | grep ^[SL])'
   create-from-m = "!f() { ff() { echo \"$(git branch --list \"$1\")\"; }; m=$(ff \"master\"); if [ -z \"$m\" ]; then m=$(ff \"main\"); fi; m=$(echo \"$m\" | xargs); git checkout \"$m\" && git pull origin \"$m\" && git checkout -b "$1"; }; f"
   remove-working-commits = '!(git rebase --exec 'sh -c "if [ $(git log -1 --pretty=%S) = <commit-hash-to-drop> ]; then exit 1; fi"' $1)'
+  cherry-pick-multi = "!f() { commit=$1; shift; for branch in \"$@\"; do git checkout $branch && git cherry-pick $commit; done; git checkout -; }; f"
