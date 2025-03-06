@@ -39,3 +39,5 @@
   check-m-sync = "!f() { ff() { echo \"$(git branch --list \"$1\")\"; }; m=$(ff \"master\"); if [ -z \"$m\" ]; then m=$(ff \"main\"); fi; m=$(echo \"$m\" | xargs); echo \"This branch is $(git rev-list --left-right --count \"$m\"...HEAD | awk '{print $1}') behind the main or master branch\"; }; f"
   update-check-sync = "!f() { git update-master; git check-m-sync; }; f"
   ucs = update-check-sync
+  list-flagged = '!(git ls-files -v | grep ^[SL])
+  create-from-m = "!f() { ff() { echo \"$(git branch --list \"$1\")\"; }; m=$(ff \"master\"); if [ -z \"$m\" ]; then m=$(ff \"main\"); fi; m=$(echo \"$m\" | xargs); git checkout \"$m\" && git pull origin \"$m\" && git checkout -b "$1"; }; f"
