@@ -1,6 +1,5 @@
 from arcgis import GIS
-from arcnng3.toolboxes.tools import config
-from arcnng3.portal_scripts.nngis import NNGIS
+from portal_scripts.gis import GIS
 import json
 import sys
 
@@ -11,16 +10,14 @@ def createAdminUName(e):
 	return "{0}_gis_portal".format(e)
 
 def syncUsersBetweenPortalEnvs():
-	#DEVif config.TARGET_ENV != "prod":
-		#DEVraise Exception("This must be run from the prod environment")
 	try:
-		prodPortal = NNGIS(config.getUsername(createAdminUName("dev")))
+		prodPortal = GIS(config.getUsername(createAdminUName("dev")))
 	except Exception:
 		raise Exception("Error connecting to the prod portal")
 	prodUsers = prodPortal.getUsers('!esri_* & !gisadmin*')
 
 	# Get lower environment portals
-	lowerPortals = [NNGIS(createAdminUName(k),v) for (k,v) in dict(filter(lambda k: k!='prod',config.PORTAL_URLS.items())).items()]
+	lowerPortals = [GIS(createAdminUName(k),v) for (k,v) in dict(filter(lambda k: k!='prod',config.PORTAL_URLS.items())).items()]
 
 	for prodUser in prodUsers:
 		for portal in lowerPortals:		
@@ -65,4 +62,3 @@ def syncUsersBetweenPortalEnvs():
 
 if __name__ == "__main__":
 	syncUsersBetweenPortalEnvs()
-			
