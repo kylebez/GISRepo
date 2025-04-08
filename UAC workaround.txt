@@ -1,4 +1,4 @@
-Since BHE has disabled Universal Access Control in the group policy, elevating scripts is not as simple any more.
+FOR POLICIES THAT HAVE DISABLED USER ACCESS CONTROL
 
 For programs and executables, elevation can still be done in the context menu by selecting "Run as a different user...", but this option is not available for scripts.
 
