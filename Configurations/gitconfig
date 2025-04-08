@@ -45,3 +45,4 @@
   cherry-pick-multi = "!f() { commit=$1; shift; for branch in \"$@\"; do git checkout $branch && git cherry-pick $commit; done; git checkout -; }; f"
   toggle-skip-worktree = "!f() { for file in \"$@\"; do if git ls-files \"$file\" -t | grep ^S; then git update-index --no-skip-worktree \"$file\"; else git update-index --skip-worktree \"$file\"; fi; done; }; f"
   tsw = toggle-skip-worktree
+  pop-and-drop = git stash pop && git stash drop
