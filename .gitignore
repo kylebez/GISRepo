@@ -6,3 +6,13 @@ Configurations/desktop.ini
 Configurations/*.ibak
 Configurations/localpwsafe_010.ibak
 Configurations/*.psafe3
+Rust Demo/test_rust_utm_converter/target/
+**/*.rs.bk
+Cargo.lock
+*.log
+*.tmp
+*.swp
+/doc/
+.rustup/
+.rustc/
+Rust Demo/.env
