@@ -1,0 +1,16 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "rust build",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["build", "--manifest-path", "C:/Users/kyleb/OneDrive/Documents/Repos/GISRepo/Rust Demo/test_rust_utm_converter/Cargo.toml"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$rustc"]
+    }
+  ]
+}
