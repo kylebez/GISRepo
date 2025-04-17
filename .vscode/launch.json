@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug Rust Program",
+      "program": "${workspaceFolder}/${input:executablePath}",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "stopOnEntry": false,
+      "sourceLanguages": ["rust"]
+    }
+  ],
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "executablePath",
+      "description": "Enter the path to the Rust executable (e.g., target/debug/test_rust_utm_converter)"
+    }
+  ]
+}
