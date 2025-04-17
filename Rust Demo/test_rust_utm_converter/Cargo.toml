@@ -1,0 +1,18 @@
+[package]
+name = "test-utm-converter"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["rlib","cdylib"]
+
+[dependencies]
+num = {version = "0.4.0", optional = true, default-features = false, features = ["libm"]}
+pyo3 = { version = "0.24.1", features = ["extension-module"], optional = true }
+
+[features]
+no_std = ["num"]
+default = ["std"]
+std = ["num"]
+python = ["num","pyo3"]
+pyo3 = ["dep:pyo3"]
