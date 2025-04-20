@@ -5,5 +5,6 @@
 		"maturin",
 		"pyfunction",
 		"pymodule"
-	]
+	],
+	"pylint.path": [".\\.venv\\Scripts\\pylint.exe"]
 }

@@ -15,4 +15,4 @@ Cargo.lock
 /doc/
 .rustup/
 .rustc/
-Rust Demo/.env
+.venv

@@ -1,22 +1,33 @@
 {
   "version": "0.2.0",
   "configurations": [
+    {"name":"Python Debugger: Current File","type":"debugpy","request":"launch","program":"${file}","args": ["34.05610995373038", "-117.1956410050385"],"console":"integratedTerminal"},
     {
       "type": "lldb",
       "request": "launch",
       "name": "Debug Rust Program",
-      "program": "${workspaceFolder}/${input:executablePath}",
-      "args": [],
+      "program": "C:\\Users\\kyleb\\OneDrive\\Documents\\Repos\\GISRepo\\Rust Demo\\test_rust_utm_converter\\target\\debug\\test-utm-converter.exe",
+      "args": ["34.05610995373038", "-117.1956410050385"],
       "cwd": "${workspaceFolder}",
       "stopOnEntry": false,
       "sourceLanguages": ["rust"]
-    }
-  ],
-  "inputs": [
+    },
     {
-      "type": "promptString",
-      "id": "executablePath",
-      "description": "Enter the path to the Rust executable (e.g., target/debug/test_rust_utm_converter)"
-    }
+      "name": "Run Python Rust Comparer",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/Rust Demo/python/rust_comparer.py",
+      "args": ["34.05610995373038", "-117.1956410050385"],
+      "console": "integratedTerminal"
+    },
+    {
+    "name": "Debug PyO3 Module",
+    "type": "lldb",
+    "request": "launch",
+    "program": "${workspaceFolder}/.venv/Scripts/python",
+    "args": ["${workspaceFolder}/Rust Demo/python/rust_comparer.py", "34.05610995373038", "-117.1956410050385"],
+    "cwd": "${workspaceFolder}",
+    "sourceLanguages": ["rust"]
+}
   ]
 }
