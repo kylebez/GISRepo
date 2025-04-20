@@ -20,7 +20,7 @@ mod python_bindings {
     }
 
     #[pyfunction]
-    fn to_utm_no_zone(latitude: f64, longitude: f64) -> PyResult<(f64, f64, f64)> {
+    fn to_utm_no_zone(latitude: f64, longitude: f64) -> PyResult<(f64, f64, u8)> {
         Ok(crate::to_utm_wgs84_no_zone(latitude, longitude))
     }
 
@@ -90,12 +90,10 @@ pub fn to_utm_wgs84(latitude: f64, longitude: f64, zone: u8) -> (f64, f64, f64) 
 /// use utm::to_utm_wgs84_no_zone;
 /// let (northing, easting, meridian_convergence) = to_utm_wgs84_no_zone(40.62, -123.45);
 /// ```
-pub fn to_utm_wgs84_no_zone(latitude: f64, longitude: f64) -> (f64, f64, f64) {
-    to_utm_wgs84(
-        latitude,
-        longitude,
-        lat_lon_to_zone_number(latitude, longitude),
-    )
+pub fn to_utm_wgs84_no_zone(latitude: f64, longitude: f64) -> (f64, f64, u8) {
+    let zone = lat_lon_to_zone_number(latitude, longitude);
+    let (northing, easting, _) = to_utm_wgs84(latitude, longitude, zone);
+    (northing, easting, zone)
 }
 
 /// Converts a latitude and longitude in radians to UTM coordinates using the WGS84 ellipsoid.
