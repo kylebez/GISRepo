@@ -1,4 +1,4 @@
 #Add the following alias to gitconfig:
 
-aprx-diff = "!sh $(git rev-parse --show-toplevel)/.githooks/export-map.sh \"${1//\\//}\" && git diff --cached ${1%.*}-export.mapx"
-clear-aprx-diff = "!rm -f $(git rev-parse --git-dir)/GIS_SERVICE_HASH && rm -f $(git rev-parse --git-dir)/GIS_SERVICE_EXPORT_HASH && echo Done"
+aprx-diff = "!sh $(git rev-parse --show-toplevel)/.githooks/export-map.sh \"${1//\\//}\" && git diff --cached ${1%.*}-export.mapx" #runs the map export and shows the export diff, if applicable
+clear-aprx-diff = "!rm -f $(git rev-parse --git-dir)/CURRENT_GIS_MAP_HASH && echo Done" #clears the current diff hash file
