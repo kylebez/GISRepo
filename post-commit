@@ -1,0 +1,11 @@
+#!/bin/sh
+
+GIT_DIR=$(git rev-parse --git-dir)
+CURRENT_HASH_FILE="$GIT_DIR/CURRENT_GIS_MAP_HASH"
+PREVIOUS_HASH_FILE="$GIT_DIR/COMMITTED_GIS_MAP_HASH"
+
+if [ -f "$CURRENT_HASH_FILE" ]; then
+	mv -f "$CURRENT_HASH_FILE" "$PREVIOUS_HASH_FILE"
+else
+	:
+fi
