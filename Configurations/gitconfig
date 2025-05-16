@@ -1,3 +1,15 @@
+[merge]
+	tool = vsdiffmerge
+	guitool = vscode
+	conflictstyle = zdiff3
+[mergetool]
+	prompt = true
+[diff]
+	tool = vsdiffmerge
+	guitool = vscode
+	algorithm = histogram
+	colorMoved = plain
+	colorMovedWS = allow-indentation-change
 [diff "astextplain"]
 	textconv = astextplain
 [filter "lfs"]
@@ -14,9 +26,17 @@
 	fscache = true
 	symlinks = true
 	editor = wordpad
-	useBuiltinFSMonitor = true
+	useBuiltinFSMonitor = false
+[fetch]
+	prune = true
+	pruneTags = true
 [pull]
-	rebase = false
+	rebase = merges
+[rebase]
+	autoStash = false
+	autoSquash = true
+	updateRefs = true
+	abbreviateCommands = true
 [credential]
 	helper = manager
 [credential "https://dev.azure.com"]
@@ -28,6 +48,13 @@
   changed = red bold strike
   untracked = cyan
   branch = yellow black bold ul
+[filter "removeLinting"]
+	clean = "python 'C:/RepoProjects/ArcGISTools (ADO)/test_filter.py'"
+[rerere]
+	autoUpdate = true
+	enabled = true
+[commit]
+	verbose = true
 [alias]
   forgotten = branch --no-merged master
   force-commit = "!f() { git commit --no-verify -m \"$1\"; }; f"
