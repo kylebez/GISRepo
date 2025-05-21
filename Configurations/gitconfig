@@ -49,7 +49,7 @@
   untracked = cyan
   branch = yellow black bold ul
 [filter "removeLinting"]
-	clean = "python 'C:/RepoProjects/ArcGISTools (ADO)/test_filter.py'"
+	clean = "python 'C:/Program Files/Git/etc/pylint_filter.py'"
 [rerere]
 	autoUpdate = true
 	enabled = true
