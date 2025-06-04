@@ -49,7 +49,7 @@
   untracked = cyan
   branch = yellow black bold ul
 [filter "removeLinting"]
-	clean = "python 'C:/Program Files/Git/etc/pylint_filter.py'"
+	clean = sed \"s/#pylint:.*\$//\"
 [rerere]
 	autoUpdate = true
 	enabled = true
@@ -72,5 +72,6 @@
   cherry-pick-multi = "!f() { commit=$1; shift; for branch in \"$@\"; do git checkout $branch && git cherry-pick $commit; done; git checkout -; }; f"
   toggle-skip-worktree = "!f() { for file in \"$@\"; do if git ls-files \"$file\" -t | grep ^S; then git update-index --no-skip-worktree \"$file\"; else git update-index --skip-worktree \"$file\"; fi; done; }; f"
   tsw = toggle-skip-worktree
+  untrack = rm --cached
   check-for-squashable = "!f() { git log --pretty=format:'%s' | sort | uniq -d; }; f"
   toggle-attributes = "!f() { if [ -f .git/info/attributes ]; then mv .git/info/attributes .git/info/attributes-disabled; echo 'gitattributes turned off'; elif [ -f .git/info/attributes-disabled ]; then mv .git/info/attributes-disabled .git/info/attributes; echo 'gitattributes turned on'; else echo 'Error in toggling gitattributes'; fi; }; f"
