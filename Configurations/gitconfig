@@ -60,7 +60,7 @@
   force-commit = "!f() { git commit --no-verify -m \"$1\"; }; f"
   sas = "!f() { git stash push -m \"working\" -u && git switch $1; }; f" 
   sap = "!f() { git switch $1 && git stash pop; }; f"
-  update-master = "!f() { cb=$(git branch --show-current); git sas master && git pull && git sap $cb; }; f"
+  update-m = "!f() { cb=$(git branch --show-current); git sas master && git pull && git sap $cb; }; f"
   oops-wrong-branch = "!f() { csha=$(git rev-parse HEAD);psha=$(git rev-parse HEAD~1);cb=$(git branch --show-current); git checkout $1 && git cherry-pick $csha && git checkout $cb && git reset --mixed $psha; }; f"
   clean-refs = reflog expire --expire-unreachable=now --all
   check-m-sync = "!f() { ff() { echo \"$(git branch --list \"$1\")\"; }; m=$(ff \"master\"); if [ -z \"$m\" ]; then m=$(ff \"main\"); fi; m=$(echo \"$m\" | xargs); echo \"This branch is $(git rev-list --left-right --count \"$m\"...HEAD | awk '{print $1}') behind the main or master branch\"; }; f"
@@ -68,10 +68,13 @@
   ucs = update-check-sync
   list-flagged = "!f(){ git ls-files -v | grep ^[SL]; }; f"
   create-from-m = "!f() { ff() { echo \"$(git branch --list \"$1\")\"; }; m=$(ff \"master\"); if [ -z \"$m\" ]; then m=$(ff \"main\"); fi; m=$(echo \"$m\" | xargs); git checkout \"$m\" && git pull origin \"$m\" && git checkout -b "$1"; }; f"
-  remove-working-commits = '!(git rebase --exec 'sh -c "if [ $(git log -1 --pretty=%S) = <commit-hash-to-drop> ]; then exit 1; fi"' $1)'
+  remove-working-commits = "!f() { git rebase --autosquash --exec 'sh -c \"if git log -1 --pretty=%s | grep -i -q ^working; then git reset --hard HEAD~1; fi\"'; }; f"
   cherry-pick-multi = "!f() { commit=$1; shift; for branch in \"$@\"; do git checkout $branch && git cherry-pick $commit; done; git checkout -; }; f"
   toggle-skip-worktree = "!f() { for file in \"$@\"; do if git ls-files \"$file\" -t | grep ^S; then git update-index --no-skip-worktree \"$file\"; else git update-index --skip-worktree \"$file\"; fi; done; }; f"
   tsw = toggle-skip-worktree
   untrack = rm --cached
   check-for-squashable = "!f() { git log --pretty=format:'%s' | sort | uniq -d; }; f"
   toggle-attributes = "!f() { if [ -f .git/info/attributes ]; then mv .git/info/attributes .git/info/attributes-disabled; echo 'gitattributes turned off'; elif [ -f .git/info/attributes-disabled ]; then mv .git/info/attributes-disabled .git/info/attributes; echo 'gitattributes turned on'; else echo 'Error in toggling gitattributes'; fi; }; f"
+  stash-skip-worktree = "!f() { git ls-files -v | awk '/^S/ {print $2}' | xargs -r -n 1 sh -c 'git tsw \"$0\" && stash push \"$0\"'; }; f"
+  ssw = stash-skip-worktree
+ 
